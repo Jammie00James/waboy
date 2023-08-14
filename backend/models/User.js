@@ -37,6 +37,7 @@ module.exports = (sequelize) => {
     },
     isverified: {
       type: DataTypes.CHAR(1),
+      defaultValue: 'F',
       allowNull: false,
     },
     createdAt: {

@@ -3,9 +3,9 @@ const authController = require('../controllers/auth.controller')
 
 const router = express.Router();
 
-// router.post('/login',authController.login)
-// router.post('/logout',authController.logout)
-// router.post('/signup',authController.signup)
+router.post('/login',authController.login)
+router.post('/logout',authController.logout)
+//router.post('/signup',authController.signup)
 // router.post('/email-verify', Auth(ROLE[Roles.user], false),authController.emailVerify)
 // router.post('/email-verify/request', authController.emailVerifyRequest)
 // router.get('/me', Auth(ROLE[Roles.user], false), authController.me)

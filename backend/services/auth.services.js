@@ -1,8 +1,12 @@
 const bcrypt = require('bcryptjs')
-const { User } = require('../config/db')
+const { User, Referral, Token } = require('../config/db')
 const config = require('../config/config.env')
 const jwt = require('jsonwebtoken')
 const CustomError = require('../utils/custom-errors')
+const {service,MailTemplate} = require('./mail.services')
+const MailService = service
+const {customAlphabet} = require('nanoid')
+const { Op } = require("sequelize");
 
 
 class AuthService {
@@ -36,39 +40,78 @@ class AuthService {
         if (!firstname) throw new CustomError('Firstname is required', 400)
         if (!lastname) throw new CustomError('Lastname is required', 400)
         if (!password) throw new CustomError('Password is required', 400)
-
         // Check if user exist
         const user = await User.findOne({
             attributes: ['username', 'email'],
             where: {
                 [Op.or]: [
-                  { username: username },
-                  { email: email }
+                    { username: username },
+                    { email: email }
                 ]
-              }
+            }
         });
         if (user) {
-            if(user.email === email) throw new CustomError('User with Email already exists', 400)
-            if(user.username === email) throw new CustomError('Username taken', 400)
+            if (user.email === email) throw new CustomError('User already exists', 400)
+            if (user.username === username) throw new CustomError('Username taken', 400)
         }
-        let newuser = await User.create({ username, email, firstname, lastname, password})
-
-
+        let newuser = await User.create({ username, email, firstname, lastname, password })
 
         if (referralcode) {
             const ref = await User.findOne({
-                attributes: ['id'],
+                attributes: ['id','isVerified'],
                 where: {
                     username: referralcode
                 }
             });
+            if(ref && (ref.isVerified === "T")){
+                const referral = Referral.create({ inviter:referralcode, invitee: username})
+            }
         }
 
+        MailService.sendTemplate(MailTemplate.welcome,'Welcome to Wabot',{name: newuser.username, email: newuser.email},{})
 
+        this.requestEmailVerification(newuser.email)
 
+        let token = jwt.sign({ id: newuser.id }, config.JWT_SECRET_KEY, { expiresIn: '24h' });
+        return token
+    }
+
+    async requestEmailVerification(email) {
+        if (!email) throw new CustomError('Email is required', 400)
+        // Check if user exist
+        const user = await User.findOne({
+            attributes: ['id','username','email', 'isVerified'],
+            where: {
+                email: email
+            }
+        });
+        if (!user) throw new CustomError('email does not exist', 400)
+        if (user.isVerified) throw new CustomError('email is already verified', 200)
+
+        let token = await Token.findOne({
+            attributes: ['id'],
+            where: {
+                user: user.id
+            }
+        });
+        if(token){
+            await Token.destroy({
+                where: {
+                    id:token.id
+                }
+            });
+        }
+
+        const nanoidOTP = customAlphabet('012345789', 6)
+        const otp = nanoidOTP()
+
+        token = await Token.create({otp,type:"EMAIL_VERIFICATION",user:user.id})
+        await MailService.sendTemplate(MailTemplate.emailVerify,'Verify Your Email',{name: user.username, email: user.email},{otp})
+
+        return true
     }
 
 }
 
-module.exports = AuthService
+module.exports = new AuthService()
 

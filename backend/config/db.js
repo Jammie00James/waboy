@@ -1,7 +1,9 @@
 const { Sequelize } = require('sequelize');
 const config = require('./config.env')
 const UserModel = require('../models/User')
+const TokenModel = require('../models/Token')
 const PhoneModel = require('../models/PhoneNumber')
+const ReferralModel = require('../models/Referral')
 const relate = require('../models/createRelationships.js')
 
 
@@ -12,9 +14,11 @@ const sequelize = new Sequelize(config.DATABASE, config.DATABASE_USER, config.DA
 
 
 const User = UserModel(sequelize);
+const Token = TokenModel(sequelize);
 const PhoneNumber = PhoneModel(sequelize);
+const Referral = ReferralModel(sequelize);
 
-relate(User, PhoneNumber)
+relate(User, PhoneNumber, Token)
 
 
 async function syncDatabase() {
@@ -31,5 +35,7 @@ module.exports = {
     sequelize,
     User,
     PhoneNumber,
+    Referral,
+    Token,
     syncDatabase,
 };

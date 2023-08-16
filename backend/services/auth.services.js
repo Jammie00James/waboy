@@ -3,9 +3,9 @@ const { User, Referral, Token } = require('../config/db')
 const config = require('../config/config.env')
 const jwt = require('jsonwebtoken')
 const CustomError = require('../utils/custom-errors')
-const {service,MailTemplate} = require('./mail.services')
+const { service, MailTemplate } = require('./mail.services')
 const MailService = service
-const {customAlphabet} = require('nanoid')
+const { customAlphabet } = require('nanoid')
 const { Op } = require("sequelize");
 
 
@@ -58,17 +58,17 @@ class AuthService {
 
         if (referralcode) {
             const ref = await User.findOne({
-                attributes: ['id','isVerified'],
+                attributes: ['id', 'isVerified'],
                 where: {
                     username: referralcode
                 }
             });
-            if(ref && (ref.isVerified === "T")){
-                const referral = Referral.create({ inviter:referralcode, invitee: username})
+            if (ref && (ref.isVerified === "T")) {
+                const referral = Referral.create({ inviter: referralcode, invitee: username })
             }
         }
 
-        MailService.sendTemplate(MailTemplate.welcome,'Welcome to Wabot',{name: newuser.username, email: newuser.email},{})
+        MailService.sendTemplate(MailTemplate.welcome, 'Welcome to Wabot', { name: newuser.username, email: newuser.email }, {})
 
         this.requestEmailVerification(newuser.email)
 
@@ -80,7 +80,7 @@ class AuthService {
         if (!email) throw new CustomError('Email is required', 400)
         // Check if user exist
         const user = await User.findOne({
-            attributes: ['id','username','email', 'isVerified'],
+            attributes: ['id', 'username', 'email', 'isVerified'],
             where: {
                 email: email
             }
@@ -94,10 +94,10 @@ class AuthService {
                 user: user.id
             }
         });
-        if(token){
+        if (token) {
             await Token.destroy({
                 where: {
-                    id:token.id
+                    id: token.id
                 }
             });
         }
@@ -105,11 +105,42 @@ class AuthService {
         const nanoidOTP = customAlphabet('012345789', 6)
         const otp = nanoidOTP()
 
-        token = await Token.create({otp,type:"EMAIL_VERIFICATION",user:user.id})
-        await MailService.sendTemplate(MailTemplate.emailVerify,'Verify Your Email',{name: user.username, email: user.email},{otp})
+        token = await Token.create({ otp, type: "EMAIL_VERIFICATION", user: user.id })
+        await MailService.sendTemplate(MailTemplate.emailVerify, 'Verify Your Email', { name: user.username, email: user.email }, { otp })
 
         return true
     }
+
+
+    async verifyEmail(id, otp) {
+        if (!otp) throw new CustomError('Otp is Required', 400)
+
+        let token = await Token.findOne({
+            attributes: ['id','otp'],
+            where: {
+                user:id
+            }
+        });
+        if (!token) throw new CustomError('invalid or expired email verify otp', 400)
+        const isValid = await bcrypt.compare(otp, token.otp)
+        if (!isValid) throw new CustomError('invalid or expired email verify otp', 400)
+
+        const user = await User.findOne({
+            attributes: ['id', 'isVerified'],
+            where: {
+                email: email
+            }
+        });
+
+        await Token.destroy({
+            where: {
+                id: token.id
+            }
+        });
+
+        return true
+    }
+
 
 }
 

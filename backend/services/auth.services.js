@@ -125,14 +125,13 @@ class AuthService {
         const isValid = await bcrypt.compare(otp, token.otp)
         if (!isValid) throw new CustomError('invalid or expired email verify otp', 400)
 
-        const user = await User.findOne({
-            attributes: ['id', 'isVerified'],
+        await User.update({isVerified:"T"},{
             where: {
-                email: email
+                id:id
             }
         });
 
-        await Token.destroy({
+        Token.destroy({
             where: {
                 id: token.id
             }

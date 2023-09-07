@@ -1,9 +1,10 @@
 const util = require('util')
 const jwt = require('jsonwebtoken')
 const {User} = require('../config/db')
+const config = require('../config/config.env')
 
-export async function authenticateUser(req, res, next) {
-    const token = req.cookies.__-access;
+const authenticateUser = async (req, res, next) => {
+    const token = req.cookies.__access;
     if (token) {
         // Verify the token
         console.log('jah')
@@ -12,18 +13,22 @@ export async function authenticateUser(req, res, next) {
         let id = decoded.id;
         if (id) {
             const user = await User.findOne({
-                attributes: ['id','email', 'isVerified'],
+                attributes: ['id','email', 'isverified'],
                 where: {
                     id: id
                 }
             });
             if (user) {
-                if(req.originalUrl == '/api/auth/email-verify/request' && req.originalUrl == '/api/auth/email-verify'){
-                    if(user.isVerified === "T") return res.status(401).json({ error: 'User Email Already Verified' });
+                if(req.originalUrl == '/api/auth/email-verify/request' || req.originalUrl == '/api/auth/email-verify'){
+                    if(user.isverified === 'T'){
+                        return res.status(401).json({ error: 'User Email Already Verified' });
+                    } 
                     req.user = user;
                     next();
                 }else{
-                    if(user.isVerified === "F") return res.status(401).json({ error: 'User Email Not Verified' });
+                    if(user.isverified === "F"){
+                        return res.status(401).json({ error: 'User Email Not Verified' });
+                    } 
                     req.user = user;
                     next();
                 }
@@ -38,3 +43,6 @@ export async function authenticateUser(req, res, next) {
         return res.status(401).json({ error: 'No token provided' });
     }
 }
+
+
+module.exports = { authenticateUser}

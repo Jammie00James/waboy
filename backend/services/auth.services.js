@@ -80,13 +80,12 @@ class AuthService {
         if (!email) throw new CustomError('Email is required', 400)
         // Check if user exist
         const user = await User.findOne({
-            attributes: ['id', 'username', 'email', 'isVerified'],
+            attributes: ['id', 'username', 'email', 'isverified'],
             where: {
                 email: email
             }
         });
         if (!user) throw new CustomError('email does not exist', 400)
-        if (user.isVerified) throw new CustomError('email is already verified', 200)
 
         let token = await Token.findOne({
             attributes: ['id'],
@@ -118,14 +117,17 @@ class AuthService {
         let token = await Token.findOne({
             attributes: ['id','otp'],
             where: {
-                user:id
+                [Op.and]: [
+                    { user: id },
+                    { type: "EMAIL_VERIFICATION"}
+                ]
             }
         });
         if (!token) throw new CustomError('invalid or expired email verify otp', 400)
         const isValid = await bcrypt.compare(otp, token.otp)
         if (!isValid) throw new CustomError('invalid or expired email verify otp', 400)
 
-        await User.update({isVerified:"T"},{
+        await User.update({isverified:'T'},{
             where: {
                 id:id
             }

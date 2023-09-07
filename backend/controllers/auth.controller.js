@@ -7,7 +7,7 @@ exports.login = async (req, res) => {
         const { email, password } = req.body
         let token = await AuthService.login(email, password)
         if (token) {
-            res.status(200).cookie('__-access', token, { httpOnly: true, secure: true }).json({ "Message": "Login Successful" })
+            res.status(200).cookie('__access', token, { httpOnly: true, secure: true }).json({ "Message": "Login Successful" })
         }
     } catch (error) {
         if (error instanceof CustomError) {
@@ -24,7 +24,7 @@ exports.signup = async (req, res) => {
         const { username, email, firstname, lastname, password, referralcode} = req.body
         let token = await AuthService.signup(username, email, firstname, lastname, password, referralcode)
         if (token) {
-            res.status(200).cookie('__-access', token, { httpOnly: true, secure: true }).json({ "Message": "Signup Successful" })
+            res.status(200).cookie('__access', token, { httpOnly: true, secure: true }).json({ "Message": "Signup Successful" })
         }
     } catch (error) {
         if (error instanceof CustomError) {

@@ -1,14 +1,16 @@
-const AgentService = require('../agent/services')
+const AgentService = require('../services/agent.services')
 const CustomError = require('../utils/custom-errors')
 
 
 exports.create = async (req, res) => {
     try {
         const user = req.user
-        let me = await UserService.me(user.id)
-        if (me) {
-            res.status(200).json(me)
-        }
+        const prompt = req.body.prompts
+        let { client, qrString } = await AgentService.create(user.id, prompt)
+        if(client){
+            console.log(client)
+            res.status(200).json({"message": "Successful", qrString})
+        }  
     } catch (error) {
         if (error instanceof CustomError) {
             res.status(error.status).json({ error: error.message });

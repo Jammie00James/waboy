@@ -1,13 +1,18 @@
 const config = require('../config/config.env')
 const qrcode = require('qrcode-terminal');
-const { Client, LocalAuth } = require('whatsapp-web.js');
+const { Client, RemoteAuth } = require('whatsapp-web.js');
+const {store} = require('../config/monDb')
 
 class AgentService {
     async create(clientId, prompts) {
       return new Promise(async (resolve, reject) => {
-      const client = new Client({
-        authStrategy: new LocalAuth({ clientId: clientId })
-      });
+        const client = new Client({
+          authStrategy: new RemoteAuth({
+            clientId:clientId,
+            store: store,
+            backupSyncIntervalMs: 600000
+          })
+        })
     
       // Handle events and authentication here
       client.on('qr', qr => {

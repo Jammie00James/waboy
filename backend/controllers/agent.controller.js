@@ -6,9 +6,10 @@ exports.create = async (req, res) => {
     try {
         const user = req.user
         const prompt = req.body.prompts
-        let { client, qrString } = await AgentService.create(user.id, prompt)
+        let clientid = await AgentService.generateclientId(user.id)
+        let { client, qrString } = await AgentService.create(clientid, prompt)
         if(client){
-            console.log(client)
+            await AgentService.createState(clientid,"RUNNING",user.id)
             res.status(200).json({"message": "Successful", qrString})
         }  
     } catch (error) {

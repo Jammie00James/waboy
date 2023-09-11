@@ -3,6 +3,7 @@ const config = require('./config.env')
 const UserModel = require('../models/User')
 const TokenModel = require('../models/Token')
 const PhoneModel = require('../models/PhoneNumber')
+const AgentModel = require('../models/Agent')
 const ReferralModel = require('../models/Referral')
 const relate = require('../models/createRelationships.js')
 
@@ -17,13 +18,14 @@ const User = UserModel(sequelize);
 const Token = TokenModel(sequelize);
 const PhoneNumber = PhoneModel(sequelize);
 const Referral = ReferralModel(sequelize);
+const Agent = AgentModel(sequelize);
 
-relate(User, PhoneNumber, Token)
+relate(User, PhoneNumber, Token, Agent)
 
 
 async function syncDatabase() {
     try {
-        await sequelize.sync({ force: false }); // Use { force: true } to drop and recreate the tables on each sync (for development)
+        await sequelize.sync({ force: true }); // Use { force: true } to drop and recreate the tables on each sync (for development)
         console.log('Database sync complete.');
     } catch (error) {
         console.error('Error syncing the database:', error);
@@ -37,5 +39,6 @@ module.exports = {
     PhoneNumber,
     Referral,
     Token,
+    Agent,
     syncDatabase,
 };

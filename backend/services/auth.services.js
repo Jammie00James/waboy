@@ -58,7 +58,7 @@ class AuthService {
 
         if (referralcode) {
             const ref = await User.findOne({
-                attributes: ['id', 'isVerified'],
+                attributes: ['id', 'isverified'],
                 where: {
                     username: referralcode
                 }

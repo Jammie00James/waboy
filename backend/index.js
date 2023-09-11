@@ -1,6 +1,7 @@
 const express = require('express')
 const bodyParser = require('body-parser');
 const dotenv = require('dotenv')
+require('./config/monDb')
 const cookieParser = require('cookie-parser');
 dotenv.config()
 const { sequelize, syncDatabase } = require('./config/db');

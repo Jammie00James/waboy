@@ -3,8 +3,8 @@ const { MongoStore } = require('wwebjs-mongo');
 const mongoose = require('mongoose');
 
 
-await mongoose.connect("").then(async () => {
-    console.log("01")
+await mongoose.connect(config.mongoURI).then(async () => {
+    console.log("Mongo connected")
 
 });
 

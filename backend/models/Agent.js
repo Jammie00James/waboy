@@ -8,12 +8,16 @@ module.exports = (sequelize) => {
         primaryKey: true,
         autoIncrement: true,
         },
-    clientId: {
+    clientid: {
       type: DataTypes.STRING,
       allowNull: false,
     },
     state: {
       type: DataTypes.STRING,
+      allowNull: false,
+    },
+    config: {
+      type: DataTypes.JSON,
       allowNull: false,
     },
     createdAt: {
@@ -23,5 +27,5 @@ module.exports = (sequelize) => {
     },
     // Add more properties as needed
   });
-  return clientId;
+  return Agent;
 }

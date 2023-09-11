@@ -49,9 +49,9 @@ async function main() {
   mongoose.connect("mongodb+srv://jammy:Happyentry5@cluster0.tetarar.mongodb.net/?retryWrites=true&w=majority").then(async () => {
     console.log("01")
     let store = new MongoStore({ mongoose: mongoose });
-    console.log("012")
-    let tester = await createClient("client2", prompts, store)
-    let tester2 = await createClient("client1", prompts, store)
+    // console.log("012")
+    // let tester = await createClient("client2", prompts, store)
+    // let tester2 = await createClient("client1", prompts, store)
   });
 
 

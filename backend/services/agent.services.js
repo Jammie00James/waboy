@@ -3,9 +3,11 @@ const qrcode = require('qrcode-terminal');
 const { Agent } = require('../config/db')
 const { Client, RemoteAuth } = require('whatsapp-web.js');
 const { customAlphabet } = require('nanoid')
-const { store } = require('../config/monDb')
+const { MongoStore } = require('wwebjs-mongo');
+const mongoose = require('mongoose');
+// const { connectMongo } = require('../config/monDb')
+let store
 let runningInstances = []
-runningInstances = await Agent.findAll();
 
 class AgentService {
   async create(clientId, prompts) {
@@ -56,24 +58,75 @@ class AgentService {
 
   }
 
-  async createState(clientid, state, owner) {
-    let newClient = await Agent.create({ clientid, state, owner })
-    if (newClient) {
-      runningInstances.push(newClient)
+  async createState(clientid, state, config, owner) {
+
+    const oldClient = await Agent.findOne({
+      attributes: ['id', 'clientid', 'owner'],
+      where: {
+        clientid: clientid,
+      }
+    });
+    if (oldClient) {
+      await User.update({ state, config }, {
+        where: {
+          id: oldClient.id
+        }
+      });
+
       return true
+
     } else {
-      return false
+      let newClient = await Agent.create({ clientid, state, owner, config })
+      if (newClient) {
+        runningInstances.push(newClient)
+        return true
+      } else {
+        return false
+      }
     }
   }
 
 }
 const service = new AgentService()
 
+console.log(24)
 
-runningInstances.array.forEach(element => {
-  if(element.state = "RUNNING"){
-    service.create(element.clientid,element.prompts)
+
+async function connectMongo() {
+  console.log(50)
+  await mongoose.connect("mongodb+srv://jammy:Happyentry5@cluster0.tetarar.mongodb.net/?retryWrites=true&w=majority")
+  console.log("01")
+  store = new MongoStore({ mongoose: mongoose });
+  // console.log("012")  // let tester2 = await createClient("client1", prompts, store)
+}
+
+async function fetchAndProcessInstances() {
+  console.log(87)
+  runningInstances = await Agent.findAll({
+    attributes: ['id', 'clientid', 'state', 'config', 'owner']
+  });
+}
+
+
+(async () => {
+  try {
+    await connectMongo()
+    fetchAndProcessInstances()
+      .then(() => {
+        // console.log(runningInstances)
+        runningInstances.forEach(element => {
+          if (element.state = "RUNNING") {
+            console.log(element.config, JSON.parse(element.config))
+            service.create(element.clientid, JSON.parse(element.config))
+          }
+        });
+      })
+      .catch((error) => {
+        console.log("An error occoured" + error)
+      });
+  } catch (error) {
+    console.error('Error connecting to MongoDB:', error);
   }
-});
+})();
 
 module.exports = service

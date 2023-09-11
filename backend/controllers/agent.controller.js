@@ -1,4 +1,5 @@
-const AgentService = require('../services/agent.services')
+const service = require('../services/agent.services')
+const AgentService = service
 const CustomError = require('../utils/custom-errors')
 
 
@@ -9,7 +10,7 @@ exports.create = async (req, res) => {
         let clientid = await AgentService.generateclientId(user.id)
         let { client, qrString } = await AgentService.create(clientid, prompt)
         if(client){
-            await AgentService.createState(clientid,"RUNNING",user.id)
+            await AgentService.createState(clientid,"RUNNING",prompt,user.id)
             res.status(200).json({"message": "Successful", qrString})
         }  
     } catch (error) {

@@ -46,7 +46,7 @@ async function createClient(clientId, prompts, store) {
 async function main() {
 
   let prompts = [{ prompt: "hello goodmorning", reply: "same here morning" }, { prompt: "hello goodafternoon", reply: "same here afternoon" }, { prompt: "hello goodevening", reply: "same here evening" }]
-  mongoose.connect("mongodb+srv://jammy:Happyentry5@cluster0.tetarar.mongodb.net/?retryWrites=true&w=majority").then(async () => {
+  mongoose.connect("").then(async () => {
     console.log("01")
     let store = new MongoStore({ mongoose: mongoose });
     // console.log("012")

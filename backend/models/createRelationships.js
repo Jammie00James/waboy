@@ -1,4 +1,4 @@
-function relate(User, PhoneNumber, Token, Agent) {
+function relate(User, PhoneNumber, Token, Agent, ContactList, Person) {
   User.hasMany(PhoneNumber, {
     foreignKey: 'owner',
     allowNull: false, // Ensure that 'userId' cannot be null
@@ -17,6 +17,23 @@ function relate(User, PhoneNumber, Token, Agent) {
     allowNull: false,
   });
 
+  User.hasMany(ContactList, {
+    foreignKey: 'owner',
+    allowNull: false, // Ensure that 'userId' cannot be null
+  });
+  ContactList.belongsTo(User, {
+    foreignKey: 'owner',
+    allowNull: false,
+  });
+
+  ContactList.hasMany(Person, {
+    foreignKey: 'list',
+    allowNull: false, // Ensure that 'userId' cannot be null
+  });
+  Person.belongsTo(ContactList, {
+    foreignKey: 'list',
+    allowNull: false,
+  });
 
   User.hasMany(Token, {
     foreignKey: 'user',

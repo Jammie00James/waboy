@@ -1,16 +1,19 @@
 const config = require('../config/config.env')
 const qrcode = require('qrcode-terminal');
-const { Agent } = require('../config/db')
+const CustomError = require('../utils/custom-errors')
+const { Agent, User } = require('../config/db')
 const { Client, RemoteAuth } = require('whatsapp-web.js');
 const { customAlphabet } = require('nanoid')
 const { MongoStore } = require('wwebjs-mongo');
+const { Op } = require("sequelize");
 const mongoose = require('mongoose');
 // const { connectMongo } = require('../config/monDb')
 let store
 let runningInstances = []
+let activeInstances = []
 
 class AgentService {
-  async create(clientId, prompts) {
+  async create(clientId, prompts, owner) {
     return new Promise(async (resolve, reject) => {
       const client = new Client({
         authStrategy: new RemoteAuth({
@@ -33,18 +36,22 @@ class AgentService {
       })
 
       client.on('ready', () => {
-        console.log('Client ' + clientId + ' is ready!');
+        console.log(clientId + ' is ready!');
+        this.createState(clientId, "RUNNING", prompts, owner)
       });
 
       client.on("message", message => {
         console.log(clientId + ' New Message : ' + message.body + " " + message.from);
         prompts.forEach(element => {
           if (message.body == element.prompt)
-            message.reply(element.reply);
+            setTimeout(() => {
+              message.reply(element.reply);
+            }, 15000);
         });
       })
 
       await client.initialize();
+      activeInstances.push(client)
       resolve({ client })
     })
   }
@@ -67,7 +74,7 @@ class AgentService {
       }
     });
     if (oldClient) {
-      await User.update({ state, config }, {
+      await Agent.update({ state, config }, {
         where: {
           id: oldClient.id
         }
@@ -86,11 +93,128 @@ class AgentService {
     }
   }
 
+  async deleteState(clientid, owner) {
+
+    const oldClient = await Agent.findOne({
+      attributes: ['id', 'clientid', 'owner'],
+      where: {
+        [Op.and]: [
+          { clientid: clientid },
+          { owner: owner }
+        ]
+      }
+    });
+    if (oldClient) {
+      await Agent.destroy({
+        where: {
+          id: oldClient.id
+        }
+      });
+      return true
+    } else {
+      throw new CustomError('Agent does not exist', 400)
+    }
+  }
+
+  async delete(clientId, owner) {
+    if (!clientId) throw new CustomError('Client required to delete', 400)
+    let auth = this.deleteState(clientId, owner)
+    if (auth) {
+      activeInstances.forEach(async client => {
+        if (client.clientId == clientId) {
+          await client.destroy()
+          //Delete from activeInstances and running instances
+          return true
+        }
+      });
+    } else {
+      throw new CustomError('Agent does not exist', 400)
+    }
+  }
+
+  async all(owner) {
+    const agents = await Agent.findAll({
+      attributes: ['id', 'clientid', 'state', 'config', 'updatedAt'],
+      where: {
+        owner: owner
+      }
+    });
+    return agents;
+
+  }
+
+  async update(clientId, prompts, owner) {
+    const client = await Agent.findOne({
+      attributes: ['id', 'clientid', 'state', 'owner'],
+      where: {
+        [Op.and]: [
+          { clientid: clientId },
+          { owner: owner }
+        ]
+      }
+    });
+
+    if (!client) throw new CustomError('Agent does not exist', 400)
+    if (client.state === "RUNNING") throw new CustomError('Cannot modify running agent, please stop agent and try again', 400)
+    const saved = await this.createState(clientId, "STOPPED", prompts, owner)
+    if (saved) {
+      return true
+    } else {
+      return false
+    }
+  }
+
+  async stop(clientId, owner) {
+    const client = await Agent.findOne({
+      attributes: ['id', 'clientid', 'state', 'config', 'owner'],
+      where: {
+        [Op.and]: [
+          { clientid: clientId },
+          { owner: owner }
+        ]
+      }
+    });
+    if (!client) throw new CustomError('Agent does not exist', 400)
+    if (client.state === "STOPPED") throw new CustomError('Agent is not running', 400)
+
+    activeInstances.forEach(async instance => {
+      if (instance.clientId == clientId) {
+        await instance.stop()
+        // Remove instance from list of activeInstances
+      }
+    });
+    const stopped = await this.createState(clientId, "STOPPED", client.config, owner)
+    if (stopped) {
+      return true
+    } else {
+      return false
+    }
+  }
+
+  async start(clientId, owner) {
+    const oldClient = await Agent.findOne({
+      attributes: ['id', 'clientid', 'state', 'config', 'owner'],
+      where: {
+        [Op.and]: [
+          { clientid: clientId },
+          { owner: owner }
+        ]
+      }
+    });
+    if (!oldClient) throw new CustomError('Agent does not exist', 400)
+    if (oldClient.state === "RUNNING") throw new CustomError('Agent is already running', 400)
+
+    const { client, qrString } = await this.create(clientId, oldClient.config, owner)
+    return { client, qrString }
+  }
+
 }
+
 const service = new AgentService()
 
-console.log(24)
 
+
+console.log(24)
 
 async function connectMongo() {
   console.log(50)
@@ -117,7 +241,7 @@ async function fetchAndProcessInstances() {
         runningInstances.forEach(element => {
           if (element.state = "RUNNING") {
             console.log(element.config, JSON.parse(element.config))
-            service.create(element.clientid, JSON.parse(element.config))
+            service.create(element.clientid, JSON.parse(element.config), element.owner)
           }
         });
       })

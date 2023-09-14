@@ -34,6 +34,10 @@ class AgentService {
       client.on('remote_session_saved', () => {
         console.log(clientId + "Remote session saved")
       })
+      
+      client.on('disconnected', () => {
+        console.log(clientId + ' disconnected')
+      })
 
       client.on('ready', () => {
         console.log(clientId + ' is ready!');
@@ -74,7 +78,7 @@ class AgentService {
       }
     });
     if (oldClient) {
-      await Agent.update({ state, config }, {
+      await Agent.update({ state, config:JSON.stringify(config) }, {
         where: {
           id: oldClient.id
         }
@@ -83,7 +87,7 @@ class AgentService {
       return true
 
     } else {
-      let newClient = await Agent.create({ clientid, state, owner, config })
+      let newClient = await Agent.create({ clientid, state, owner, config:JSON.stringify(config) })
       if (newClient) {
         runningInstances.push(newClient)
         return true
@@ -118,15 +122,21 @@ class AgentService {
 
   async delete(clientId, owner) {
     if (!clientId) throw new CustomError('Client required to delete', 400)
-    let auth = this.deleteState(clientId, owner)
+    let auth = await this.deleteState(clientId, owner)
     if (auth) {
-      activeInstances.forEach(async client => {
-        if (client.clientId == clientId) {
-          await client.destroy()
-          //Delete from activeInstances and running instances
-          return true
-        }
-      });
+      const targetClientIndex = activeInstances.findIndex((client) => client.authStrategy.clientId === clientId);
+      console.log(targetClientIndex)
+  
+      if (targetClientIndex !== -1) {
+        // Send the message using the target client
+        await activeInstances[targetClientIndex].logout()
+        await activeInstances.splice(targetClientIndex, 1)[0];
+        return true
+      } else {
+        console.log(`Client with ID ${clientId} not found.`);
+        return true
+      }
+  
     } else {
       throw new CustomError('Agent does not exist', 400)
     }
@@ -138,6 +148,9 @@ class AgentService {
       where: {
         owner: owner
       }
+    });
+    agents.forEach(element => {
+      element.config = JSON.parse(element.config)
     });
     return agents;
 
@@ -177,18 +190,27 @@ class AgentService {
     if (!client) throw new CustomError('Agent does not exist', 400)
     if (client.state === "STOPPED") throw new CustomError('Agent is not running', 400)
 
-    activeInstances.forEach(async instance => {
-      if (instance.clientId == clientId) {
-        await instance.stop()
-        // Remove instance from list of activeInstances
+
+    const targetClientIndex = activeInstances.findIndex((client) => client.authStrategy.clientId === clientId);
+    console.log(targetClientIndex)
+
+    if (targetClientIndex !== -1) {
+      // Send the message using the target client
+      await activeInstances[targetClientIndex].destroy()
+      await activeInstances.splice(targetClientIndex, 1)[0];
+      const stopped = await this.createState(clientId, "STOPPED", JSON.parse(client.config), owner)
+      if (stopped) {
+        return true
+      } else {
+        return false
       }
-    });
-    const stopped = await this.createState(clientId, "STOPPED", client.config, owner)
-    if (stopped) {
-      return true
     } else {
-      return false
+      console.log(`Client with ID ${clientId} not found.`);
+      throw new CustomError('Client with ID ${clientId} not found.', 400)
     }
+
+
+
   }
 
   async start(clientId, owner) {
@@ -204,7 +226,7 @@ class AgentService {
     if (!oldClient) throw new CustomError('Agent does not exist', 400)
     if (oldClient.state === "RUNNING") throw new CustomError('Agent is already running', 400)
 
-    const { client, qrString } = await this.create(clientId, oldClient.config, owner)
+    const { client, qrString } = await this.create(clientId, JSON.parse(oldClient.config), owner)
     return { client, qrString }
   }
 
@@ -239,8 +261,8 @@ async function fetchAndProcessInstances() {
       .then(() => {
         // console.log(runningInstances)
         runningInstances.forEach(element => {
-          if (element.state = "RUNNING") {
-            console.log(element.config, JSON.parse(element.config))
+          if (element.state === "RUNNING") {
+            console.log(JSON.parse(element.config))
             service.create(element.clientid, JSON.parse(element.config), element.owner)
           }
         });

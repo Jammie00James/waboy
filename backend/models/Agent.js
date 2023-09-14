@@ -17,7 +17,7 @@ module.exports = (sequelize) => {
       allowNull: false,
     },
     config: {
-      type: DataTypes.JSON,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     createdAt: {

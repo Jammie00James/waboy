@@ -103,6 +103,7 @@ class AuthService {
 
         const nanoidOTP = customAlphabet('012345789', 6)
         const otp = nanoidOTP()
+        console.log(otp)
 
         token = await Token.create({ otp, type: "EMAIL_VERIFICATION", user: user.id })
         await MailService.sendTemplate(MailTemplate.emailVerify, 'Verify Your Email', { name: user.username, email: user.email }, { otp })

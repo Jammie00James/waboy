@@ -53,6 +53,24 @@ exports.addSingle = async (req, res) => {
         }
     }
 }
+
+
+
+exports.addBatch = async (req, res) => {
+    try {
+        const user = req.user
+        const {batch, listId} =req.body
+        let list = await ContactService.addBatch(batch, listId, user.id)
+        res.status(200).json(list)
+    } catch (error) {
+        if (error instanceof CustomError) {
+            res.status(error.status).json({ error: error.message });
+        } else {
+            console.error(error);
+            res.status(500).json({ error: 'An error occured' });
+        }
+    }
+}
 // exports.update = async (req, res) => {
 //     try {
 //         const data = req.body

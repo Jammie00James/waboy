@@ -26,9 +26,14 @@ module.exports = (sequelize) => {
   });
   Token.beforeSave(async (token) => {
     if (token.changed('otp')) {
-      const saltRounds = 8;
-      const hashedcode = await bcrypt.hash(token.otp, saltRounds);
-      token.otp = hashedcode;
+      if(token.type === "EMAIL_VERIFICATION"){
+        const saltRounds = 8;
+        const hashedcode = await bcrypt.hash(token.otp, saltRounds);
+        token.otp = hashedcode;
+      }
+      if(token.type === "GOOGLE_ACCESS"){
+        
+      }
     }
   });
   return Token;

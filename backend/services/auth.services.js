@@ -143,7 +143,37 @@ class AuthService {
         return true
     }
 
+    async googleAccess(code, owner) {
+        if (!code) throw new CustomError('Code is Required', 400)
 
+
+
+
+
+
+
+        const result =3;
+        let token = await Token.findOne({
+            attributes: ['id'],
+            where: {
+                [Op.and]: [
+                    { user: owner },
+                    { type: "GOOGLE_ACCESS"}
+                ]
+            }
+        });
+
+        if(token){
+            await Token.update({otp:result.refresh_token},{
+                where: {
+                    id:id
+                }
+            });
+        }else{
+            newtoken = await Token.create({ otp:result.refresh_token, type: "GOOGLE_ACCESS", user: owner })
+        }
+        return true
+    }  
 }
 
 module.exports = new AuthService()

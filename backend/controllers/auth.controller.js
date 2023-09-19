@@ -75,3 +75,22 @@ exports.logout = (req, res) => {
     res.clearCookie('Jwt');
     res.status(200).json({ success: true, message: 'Logout successful' });
 };
+
+
+exports.googleAccess = async (req, res) => {
+    try {
+        const user = req.user
+        const {code} = req.body
+        let state = await AuthService.googleAccess(code, user.id)
+        if (state) {
+            res.status(200).json({ success: true, message: 'Added google account succesfully' });
+        }
+    } catch (error) {
+        if (error instanceof CustomError) {
+            res.status(error.status).json({ error: error.message });
+        } else {
+            console.error(error);
+            res.status(500).json({ error: 'An error occured' });
+        }
+    }
+};

@@ -8,6 +8,7 @@ router.post('/logout',authController.logout)
 router.post('/signup',authController.signup)
 router.post('/email-verify',[authMiddleware.authenticateUser] ,authController.emailVerify)
 router.get('/email-verify/request', [authMiddleware.authenticateUser], authController.emailVerifyRequest)
+router.post('/google-access',[authMiddleware.authenticateUser],authController.googleAccess)
 
 
 

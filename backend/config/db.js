@@ -12,7 +12,13 @@ const relate = require('../models/createRelationships.js')
 
 const sequelize = new Sequelize(config.DATABASE, config.DATABASE_USER, config.DATABASE_PASSWORD, {
     host: config.DATABASE_HOST,
-    dialect: 'mysql',
+    dialect: 'postgres',
+    dialectOptions: {
+        ssl: {
+          require: true, // Set to true to require SSL
+          rejectUnauthorized: false // To accept self-signed certificates
+        }
+      }
 });
 
 

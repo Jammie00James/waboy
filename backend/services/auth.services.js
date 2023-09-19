@@ -5,7 +5,7 @@ const jwt = require('jsonwebtoken')
 const CustomError = require('../utils/custom-errors')
 const { service, MailTemplate } = require('./mail.services')
 const MailService = service
-const { customAlphabet } = require('nanoid')
+const {generateToken} = require('../utils/tools')
 const { Op } = require("sequelize");
 
 
@@ -101,8 +101,7 @@ class AuthService {
             });
         }
 
-        const nanoidOTP = customAlphabet('012345789', 6)
-        const otp = nanoidOTP()
+        const otp = generateToken()
         console.log(otp)
 
         token = await Token.create({ otp, type: "EMAIL_VERIFICATION", user: user.id })

@@ -5,7 +5,6 @@ const jwt = require('jsonwebtoken')
 const CustomError = require('../utils/custom-errors')
 const { service, MailTemplate } = require('./mail.services')
 const MailService = service
-const { customAlphabet } = require('nanoid')
 const { Op } = require("sequelize");
 const Agent = require('../models/Agent')
 

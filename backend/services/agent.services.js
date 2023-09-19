@@ -3,7 +3,7 @@ const qrcode = require('qrcode-terminal');
 const CustomError = require('../utils/custom-errors')
 const { Agent, User } = require('../config/db')
 const { Client, RemoteAuth } = require('whatsapp-web.js');
-const { customAlphabet } = require('nanoid')
+const {generateToken} = require('../utils/tools')
 const { MongoStore } = require('wwebjs-mongo');
 const { Op } = require("sequelize");
 const mongoose = require('mongoose');
@@ -62,7 +62,7 @@ class AgentService {
 
   async generateclientId(clientId) {
 
-    const nanoidOTP = customAlphabet('012345789', 4)
+    const nanoidOTP = generateToken()
     const extra = nanoidOTP()
 
     return clientId + '-' + extra

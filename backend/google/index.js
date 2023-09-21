@@ -30,3 +30,51 @@
 //     "scope": "https://www.googleapis.com/auth/contacts",
 //     "token_type": "Bearer"
 // }
+
+
+
+
+
+
+const express = require('express');
+const { OAuth2Client } = require('google-auth-library');
+
+const app = express();
+const port = 3000;
+const client_id = '412439119658-ra0e65nejusr4td1lhn4u3m31j8b23mp.apps.googleusercontent.com'; // Replace with your OAuth 2.0 client ID
+const client_secret = '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'; // Replace with your OAuth 2.0 client secret
+const redirect_uri = 'http://localhost:3000/oAuth'; // Replace with your redirect URI
+
+const oAuth2Client = new OAuth2Client(client_id, client_secret, redirect_uri);
+
+// Set up a route to initiate OAuth 2.0 authentication
+app.get('/auth', (req, res) => {
+  const authorizeUrl = oAuth2Client.generateAuthUrl({
+    access_type: 'offline', // Use 'offline' to get a refresh token
+    scope: ['https://www.googleapis.com/auth/contacts'], // Replace with the desired scope
+  });
+  res.redirect(authorizeUrl);
+});
+
+// Handle the OAuth 2.0 callback
+app.get('/oAuth', async (req, res) => {
+  const { code } = req.query;
+  const { tokens } = await oAuth2Client.getToken(code);
+
+  // You now have the access and refresh tokens
+  console.log('Access Token:', tokens.access_token);
+  console.log('Refresh Token:', tokens.refresh_token);
+
+  // Use the access token to make API requests
+  // ...
+
+  res.send('Authentication successful.');
+});
+
+app.listen(port, () => {
+  console.log(`Server is running on http://localhost:${port}`);
+});
+
+
+
+

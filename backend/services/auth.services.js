@@ -5,8 +5,9 @@ const jwt = require('jsonwebtoken')
 const CustomError = require('../utils/custom-errors')
 const { service, MailTemplate } = require('./mail.services')
 const MailService = service
-const {generateToken} = require('../utils/tools')
+const { generateToken } = require('../utils/tools')
 const { Op } = require("sequelize");
+const { OAuth2Client } = require('google-auth-library');
 
 
 class AuthService {
@@ -115,11 +116,11 @@ class AuthService {
         if (!otp) throw new CustomError('Otp is Required', 400)
 
         let token = await Token.findOne({
-            attributes: ['id','otp'],
+            attributes: ['id', 'otp'],
             where: {
                 [Op.and]: [
                     { user: id },
-                    { type: "EMAIL_VERIFICATION"}
+                    { type: "EMAIL_VERIFICATION" }
                 ]
             }
         });
@@ -127,9 +128,9 @@ class AuthService {
         const isValid = await bcrypt.compare(otp, token.otp)
         if (!isValid) throw new CustomError('invalid or expired email verify otp', 400)
 
-        await User.update({isverified:'T'},{
+        await User.update({ isverified: 'T' }, {
             where: {
-                id:id
+                id: id
             }
         });
 
@@ -151,28 +152,55 @@ class AuthService {
 
 
 
-        const result =3;
+        const result = 3;
         let token = await Token.findOne({
             attributes: ['id'],
             where: {
                 [Op.and]: [
                     { user: owner },
-                    { type: "GOOGLE_ACCESS"}
+                    { type: "GOOGLE_ACCESS" }
                 ]
             }
         });
 
-        if(token){
-            await Token.update({otp:result.refresh_token},{
+        if (token) {
+            await Token.update({ otp: result.refresh_token }, {
                 where: {
-                    id:id
+                    id: id
                 }
             });
-        }else{
-            newtoken = await Token.create({ otp:result.refresh_token, type: "GOOGLE_ACCESS", user: owner })
+        } else {
+            newtoken = await Token.create({ otp: result.refresh_token, type: "GOOGLE_ACCESS", user: owner })
         }
         return true
-    }  
+    }
+
+
+    async generateAuthCode() {
+        const oAuth2Client = new OAuth2Client(config.GOOGLE_CLIENT_ID, config.GOOGLE_CLIENT_SECRET, config.GOOGLE_REDIRECT_URI);
+
+        const authorizeUrl = oAuth2Client.generateAuthUrl({
+            access_type: 'offline', // Use 'offline' to get a refresh token
+            scope: ['https://www.googleapis.com/auth/contacts'], // Replace with the desired scope
+        });
+        return authorizeUrl
+    }
+
+    async generateAuthCodeCallback(code, owner) {
+        if (!code) throw new CustomError('Something went wrong', 400)
+        const oAuth2Client = new OAuth2Client(config.GOOGLE_CLIENT_ID, config.GOOGLE_CLIENT_SECRET, config.GOOGLE_REDIRECT_URI);
+        const { tokens } = await oAuth2Client.getToken(code);
+
+        console.log('Access Token:', tokens.access_token);
+        console.log('Refresh Token:', tokens.refresh_token);
+
+
+        if(tokens.refresh_token){
+
+        }
+
+        return true
+    }
 }
 
 module.exports = new AuthService()

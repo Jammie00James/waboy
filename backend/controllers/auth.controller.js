@@ -77,14 +77,32 @@ exports.logout = (req, res) => {
 };
 
 
-exports.googleAccess = async (req, res) => {
+exports.generateAuthCode = async (req, res) => {
     try {
         const user = req.user
-        const {code} = req.body
-        let state = await AuthService.googleAccess(code, user.id)
-        if (state) {
-            res.status(200).json({ success: true, message: 'Added google account succesfully' });
+        let authorized = await AuthService.generateAuthCode()
+        if (authorized) {
+            res.redirect(authorized);
         }
+    } catch (error) {
+        if (error instanceof CustomError) {
+            res.status(error.status).json({ error: error.message });
+        } else {
+            console.error(error);
+            res.status(500).json({ error: 'An error occured' });
+        }
+    }
+};
+
+
+exports.generateAuthCodeCallback = async (req, res) => {
+    try {
+        const { code, error } = req.query;
+        const user = req.user
+        if(!error){
+            let success = await AuthService.generateAuthCodeCallback(code, user)
+        }
+        res.redirect('http://localhost:3000/k')
     } catch (error) {
         if (error instanceof CustomError) {
             res.status(error.status).json({ error: error.message });

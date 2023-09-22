@@ -112,3 +112,22 @@ exports.generateAuthCodeCallback = async (req, res) => {
         }
     }
 };
+
+exports.removeOAuth2Client = async (req, res) => {
+    try {
+        const user = req.user
+        const {id} = req.body
+        let state = await AuthService.removeOAuth2Client(id, req.user.id)
+        if (state) {
+            res.status(200).json({ success: true, message: 'Google account removed successfully' });
+        }
+    } catch (error) {
+        if (error instanceof CustomError) {
+            res.status(error.status).json({ error: error.message });
+        } else {
+            console.error(error);
+            res.status(500).json({ error: 'An error occured' });
+        }
+    }
+}
+

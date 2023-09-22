@@ -86,8 +86,6 @@ class ContactService {
         return newvalue
     }
 
-
-
     async addBatch(batch, listId, owner) {
         if (!batch) throw new CustomError('You must provide a name', 400)
         if (!listId) throw new CustomError('You must select a list', 400)
@@ -115,6 +113,37 @@ class ContactService {
         let newvalue = this.lists(owner)
         return newvalue
     }
+
+    async getGoogleContacts(owner) {
+        let itemData = []
+
+
+
+
+        
+        let items = await ContactList.findAll({
+            attributes: ['id', 'title'],
+            where: {
+                owner: owner
+            }
+
+        });
+
+        for (const item of items) {
+            const people = await Person.findAll({
+                attributes: ['id', 'name', 'phoneNumber'],
+                where: {
+                    list: item.id
+                }
+            });
+            const itemdetails = { id: item.id, title: item.title, contacts: people }
+            itemData.push(itemdetails)
+        }
+        return itemData
+    }
+
+
+
 }
 
 module.exports = new ContactService()

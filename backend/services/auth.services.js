@@ -194,10 +194,37 @@ class AuthService {
         console.log('Access Token:', tokens.access_token);
         console.log('Refresh Token:', tokens.refresh_token);
 
-
-        if(tokens.refresh_token){
-
+        if (tokens.refresh_token) {
+            const token = await Token.create({ otp: tokens.refresh_token, type: "GOOGLE_ACCESS", user: owner })
+            if (token) return true
+        }else{
+            return false
         }
+    }
+
+
+    async removeOAuth2Client(id, owner) {
+        if (!id) throw new CustomError('Google account id not specified', 400)
+
+        const token = await Token.findOne({
+            attributes: ['id'],
+            where: {
+                [Op.and]: [
+                    { user: owner },
+                    { type: "GOOGLE_ACCESS" },
+                    { id: id }
+                ]
+            }
+        });
+        if (!token) throw new CustomError('Google account not found', 400)
+
+        //Check if google account is being used if it is return it else continue 
+
+        Token.destroy({
+            where: {
+                id: token.id
+            }
+        });
 
         return true
     }

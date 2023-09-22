@@ -7,7 +7,7 @@ router.post('/createList', [authMiddleware.authenticateUser],contactController.c
 router.get('/lists',[authMiddleware.authenticateUser], contactController.lists)
 router.post('/addSingle',[authMiddleware.authenticateUser] ,contactController.addSingle)
 router.post('/addBatch', [authMiddleware.authenticateUser] ,contactController.addBatch)
-router.get('/getGoogleContacts', [authMiddleware.authenticateUser], agentController.getGContacts)
+router.get('/getGoogleContacts', [authMiddleware.authenticateUser], agentController.getGoogleContacts)
 // router.delete('/delete', [authMiddleware.authenticateUser], agentController.delete)
 // router.put('/update', [authMiddleware.authenticateUser], agentController.update)
 

@@ -1,12 +1,11 @@
 const ContactService = require('../services/contact.services')
 const CustomError = require('../utils/custom-errors')
 
-
 exports.createList = async (req, res) => {
     try {
         const user = req.user
-        const {title} = req.body
-        let created = await ContactService.createList(title,user.id)
+        const {title, type} = req.body
+        let created = await ContactService.createList(title,type,user.id)
         if (created) {
             res.status(200).json({ message: 'List created' })
         }
@@ -38,11 +37,11 @@ exports.lists = async (req, res) => {
     }
 }
 
-exports.addSingle = async (req, res) => {
+exports.addSinglePhone = async (req, res) => {
     try {
         const user = req.user
         const {name, phoneNumber, listId} =req.body
-        let list = await ContactService.addSingle(name, phoneNumber, listId, user.id)
+        let list = await ContactService.addSinglePhone(name, phoneNumber, listId, user.id)
         res.status(200).json(list)
     } catch (error) {
         if (error instanceof CustomError) {
@@ -54,13 +53,11 @@ exports.addSingle = async (req, res) => {
     }
 }
 
-
-
-exports.addBatch = async (req, res) => {
+exports.addBatchPhone = async (req, res) => {
     try {
         const user = req.user
         const {batch, listId} =req.body
-        let list = await ContactService.addBatch(batch, listId, user.id)
+        let list = await ContactService.addBatchPhone(batch, listId, user.id)
         res.status(200).json(list)
     } catch (error) {
         if (error instanceof CustomError) {
@@ -72,12 +69,42 @@ exports.addBatch = async (req, res) => {
     }
 }
 
+exports.addSingleEmail = async (req, res) => {
+    try {
+        const user = req.user
+        const {name, email, listId} =req.body
+        let list = await ContactService.addSingleEmail(name, email, listId, user.id)
+        res.status(200).json(list)
+    } catch (error) {
+        if (error instanceof CustomError) {
+            res.status(error.status).json({ error: error.message });
+        } else {
+            console.error(error);
+            res.status(500).json({ error: 'An error occured' });
+        }
+    }
+}
 
-exports.getGContacts = async (req, res) => {
+exports.addBatchEmail = async (req, res) => {
     try {
         const user = req.user
         const {batch, listId} =req.body
-        let list = await ContactService.addBatch(batch, listId, user.id)
+        let list = await ContactService.addBatchEmail(batch, listId, user.id)
+        res.status(200).json(list)
+    } catch (error) {
+        if (error instanceof CustomError) {
+            res.status(error.status).json({ error: error.message });
+        } else {
+            console.error(error);
+            res.status(500).json({ error: 'An error occured' });
+        }
+    }
+}
+
+exports.getGoogleContacts = async (req, res) => {
+    try {
+        const user = req.user
+        let list = await ContactService.getGoogleContacts(user.id)
         res.status(200).json(list)
     } catch (error) {
         if (error instanceof CustomError) {

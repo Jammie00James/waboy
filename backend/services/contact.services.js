@@ -2,24 +2,29 @@ const { User, Person, ContactList } = require('../config/db')
 const { Op } = require("sequelize");
 const phoneUtil = require('google-libphonenumber').PhoneNumberUtil.getInstance();
 const CustomError = require('../utils/custom-errors')
+const { getUpdatedToken } = require('../utils/googleTools')
+const axios = require('axios');
+const validator = require("validator");
 
 function isValidPhoneNumber(phoneNumber) {
     try {
-      const parsedPhoneNumber = phoneUtil.parseAndKeepRawInput(phoneNumber, null); // Pass null for defaultRegion
-      return phoneUtil.isValidNumber(parsedPhoneNumber);
+        const parsedPhoneNumber = phoneUtil.parseAndKeepRawInput(phoneNumber, null); // Pass null for defaultRegion
+        return phoneUtil.isValidNumber(parsedPhoneNumber);
     } catch (error) {
-      return false;
+        return false;
     }
-  }
-  
+}
 
+function isValidEmail(email) {
+    return validator.isEmail(email);
+}
 
 class ContactService {
-    async createList(title, owner) {
+    async createList(title, type, owner) {
         if (!title) throw new CustomError('You must provide a title', 400)
-        //Check if list already exists for user, 
-        //if yes throw custom error
-        // try to create new list,return true
+        if (!type) throw new CustomError('You must provide a list type', 400)
+        if (type !== "EMAIL" && type !== "PHONE") throw new CustomError('Invalid list type', 400)
+
         let oldList = await ContactList.findOne({
             attributes: ['id'],
             where: {
@@ -31,7 +36,7 @@ class ContactService {
         });
 
         if (oldList) throw new CustomError('Title already used', 400)
-        let newList = await ContactList.create({ title, owner })
+        let newList = await ContactList.create({ title, type, owner })
 
         if (newList) {
             return true
@@ -43,7 +48,7 @@ class ContactService {
     async lists(owner) {
         let itemData = []
         let items = await ContactList.findAll({
-            attributes: ['id', 'title'],
+            attributes: ['id', 'title', 'type'],
             where: {
                 owner: owner
             }
@@ -51,27 +56,38 @@ class ContactService {
         });
 
         for (const item of items) {
-            const people = await Person.findAll({
-                attributes: ['id', 'name', 'phoneNumber'],
-                where: {
-                    list: item.id
-                }
-            });
-            const itemdetails = { id: item.id, title: item.title, contacts: people }
+            let people = []
+            if (item.type === "PHONE") {
+                people = await Person.findAll({
+                    attributes: ['id', 'name', 'phoneNumber'],
+                    where: {
+                        list: item.id
+                    }
+                });
+            } else if (item.type === "EMAIL") {
+                people = await Person.findAll({
+                    attributes: ['id', 'name', 'EMAIL'],
+                    where: {
+                        list: item.id
+                    }
+                });
+            }
+
+            const itemdetails = { id: item.id, title: item.title, type: item.type, contacts: people }
             itemData.push(itemdetails)
         }
         return itemData
     }
 
-    async addSingle(name, phoneNumber, listId, owner) {
+    async addSinglePhone(name, phoneNumber, listId, owner) {
         if (!name) throw new CustomError('You must provide a name', 400)
         if (!phoneNumber) throw new CustomError('You must provide a phoneNumber', 400)
-        if(!isValidPhoneNumber(phoneNumber)) throw new CustomError('Please provide a valid phone number', 400)
+        if (!isValidPhoneNumber(phoneNumber)) throw new CustomError('Please provide a valid phone number', 400)
         phoneNumber = phoneNumber.replace(/\s/g, '')
         if (!listId) throw new CustomError('You must select a list', 400)
 
         let list = await ContactList.findOne({
-            attributes: ['id'],
+            attributes: ['id', 'type'],
             where: {
                 [Op.and]: [
                     { id: listId },
@@ -80,18 +96,19 @@ class ContactService {
             }
         });
         if (!list) throw new CustomError('list does not exist', 400)
+        if (list.type !== "PHONE") throw new CustomError('invalid list type', 400)
         await Person.create({ name, phoneNumber, list: listId })
 
         let newvalue = this.lists(owner)
         return newvalue
     }
 
-    async addBatch(batch, listId, owner) {
-        if (!batch) throw new CustomError('You must provide a name', 400)
+    async addBatchPhone(batch, listId, owner) {
+        if (!batch) throw new CustomError('You must provide a batch', 400)
         if (!listId) throw new CustomError('You must select a list', 400)
-        
+
         let list = await ContactList.findOne({
-            attributes: ['id'],
+            attributes: ['id', 'type'],
             where: {
                 [Op.and]: [
                     { id: listId },
@@ -100,46 +117,115 @@ class ContactService {
             }
         });
         if (!list) throw new CustomError('list does not exist', 400)
+        if (list.type !== "PHONE") throw new CustomError('invalid list type', 400)
 
         for (const number of batch) {
             if (!number.name) throw new CustomError('csv not well formatted or has an error', 400)
-            if(!number.phoneNumber) throw new CustomError('csv not well formatted or has an error', 400)
-            if(!isValidPhoneNumber(number.phoneNumber)) throw new CustomError('csv not well formatted or has an error', 400)
+            if (!number.phoneNumber) throw new CustomError('csv not well formatted or has an error', 400)
+            if (!isValidPhoneNumber(number.phoneNumber)) throw new CustomError('csv not well formatted or has an error', 400)
             number.phoneNumber = number.phoneNumber.replace(/\s/g, '')
         }
         for (const number of batch) {
-            await Person.create({ name:number.name, phoneNumber:number.phoneNumber, list: listId })   
+            await Person.create({ name: number.name, phoneNumber: number.phoneNumber, list: listId })
+        }
+        let newvalue = this.lists(owner)
+        return newvalue
+    }
+
+    async addSingleEmail(name, email, listId, owner) {
+        if (!name) throw new CustomError('You must provide a name', 400)
+        if (!email) throw new CustomError('You must provide an email', 400)
+        if (!isValidEmail(email)) throw new CustomError('Please provide a valid email', 400)
+
+        if (!listId) throw new CustomError('You must select a list', 400)
+
+        let list = await ContactList.findOne({
+            attributes: ['id', 'type'],
+            where: {
+                [Op.and]: [
+                    { id: listId },
+                    { owner: owner }
+                ]
+            }
+        });
+        if (!list) throw new CustomError('list does not exist', 400)
+        if (list.type !== "EMAIL") throw new CustomError('invalid list type', 400)
+        await Person.create({ name, email, list: listId })
+
+        let newvalue = this.lists(owner)
+        return newvalue
+    }
+
+    async addBatchEmail(batch, listId, owner) {
+        if (!batch) throw new CustomError('You must provide a batch', 400)
+        if (!listId) throw new CustomError('You must select a list', 400)
+
+        let list = await ContactList.findOne({
+            attributes: ['id', 'type'],
+            where: {
+                [Op.and]: [
+                    { id: listId },
+                    { owner: owner }
+                ]
+            }
+        });
+        if (!list) throw new CustomError('list does not exist', 400)
+        if (list.type !== "EMAIL") throw new CustomError('invalid list type', 400)
+
+        for (const number of batch) {
+            if (!number.name) throw new CustomError('csv not well formatted or has an error', 400)
+            if (!number.email) throw new CustomError('csv not well formatted or has an error', 400)
+            if (!isValidEmail(number.email)) throw new CustomError('csv not well formatted or has an error', 400)
+        }
+        for (const number of batch) {
+            await Person.create({ name: number.name, email: number.email, list: listId })
         }
         let newvalue = this.lists(owner)
         return newvalue
     }
 
     async getGoogleContacts(owner) {
-        let itemData = []
+        let itemData = { contacts: [], count: 0 }
+        const token = await getUpdatedToken(owner)
+        if (token) {
+            const apiUrl = 'https://people.googleapis.com/v1/people/me/connections?personFields=names,phoneNumbers';
+            const headers = {
+                'Authorization': `Bearer ${token}`,
+            };
+
+            // Make the GET request to retrieve user's contacts
+            const response = await axios.get(apiUrl, { headers });
+            for (let contactKey in response.data.connections) {
+                const contact = response.data.connections[contactKey];
+
+                try {
+
+                    itemData.contacts.push({
+                        name: contact.names[0].displayName,
+                        phoneNumber: contact.phoneNumbers[0].canonicalForm
+                    });
 
 
-
-
-        
-        let items = await ContactList.findAll({
-            attributes: ['id', 'title'],
-            where: {
-                owner: owner
-            }
-
-        });
-
-        for (const item of items) {
-            const people = await Person.findAll({
-                attributes: ['id', 'name', 'phoneNumber'],
-                where: {
-                    list: item.id
+                    // if (contact.names && contact.names[0].displayName && contact.phoneNumbers && contact.phoneNumbers[0].canonicalForm) {
+                    //     itemData.contacts.push({
+                    //         name: contact.names[0].displayName,
+                    //         phoneNumber: contact.phoneNumbers[0].canonicalForm
+                    //     });
+                    // } else if ((!contact.names || !contact.names[0].displayName) && contact.phoneNumbers && contact.phoneNumbers[0].canonicalForm) {
+                    //     itemData.contacts.push({
+                    //         name: "",
+                    //         phoneNumber: contact.phoneNumbers[0].canonicalForm
+                    //     });
+                    // }
+                    // console.log(itemData)
+                } catch (error) {
+                    console.log("ERROR" + contact)
                 }
-            });
-            const itemdetails = { id: item.id, title: item.title, contacts: people }
-            itemData.push(itemdetails)
+            }
+            itemData.count = itemData.contacts.length
+            return itemData
         }
-        return itemData
+
     }
 
 

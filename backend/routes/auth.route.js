@@ -8,8 +8,8 @@ router.post('/logout',authController.logout)
 router.post('/signup',authController.signup)
 router.post('/email-verify',[authMiddleware.authenticateUser] ,authController.emailVerify)
 router.get('/email-verify/request', [authMiddleware.authenticateUser], authController.emailVerifyRequest)
-router.get('/oAuth2Client', [authMiddleware.authenticateUser, authMiddleware.validateGoogle], authController.generateAuthCode)
-router.get('/oAuth2ClientCallback', [authMiddleware.authenticateUser, authMiddleware.validateGoogle],authController.generateAuthCodeCallback)
+router.get('/oAuth2Client', authController.generateAuthCode)
+router.get('/oAuth2ClientCallback', authController.generateAuthCodeCallback)
 router.delete('/removeOAuth2Client',[authMiddleware.authenticateUser] ,authController.removeOAuth2Client)
 
 

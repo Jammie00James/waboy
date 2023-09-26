@@ -180,7 +180,8 @@ class AuthService {
         const oAuth2Client = new OAuth2Client(config.GOOGLE_CLIENT_ID, config.GOOGLE_CLIENT_SECRET, config.GOOGLE_REDIRECT_URI);
 
         const authorizeUrl = oAuth2Client.generateAuthUrl({
-            access_type: 'offline', // Use 'offline' to get a refresh token
+            access_type: 'offline',
+            prompt: 'consent', // Use 'offline' to get a refresh token
             scope: ['https://www.googleapis.com/auth/contacts'], // Replace with the desired scope
         });
         return authorizeUrl
@@ -195,7 +196,7 @@ class AuthService {
         console.log('Refresh Token:', tokens.refresh_token);
 
         if (tokens.refresh_token) {
-            const token = await Token.create({ otp: tokens.refresh_token, type: "GOOGLE_ACCESS", user: owner })
+            const token = await Token.create({ otp: tokens.refresh_token, type: "GOOGLE_REFRESH_TOKEN", user: owner })
             if (token) return true
         }else{
             return false
@@ -211,7 +212,7 @@ class AuthService {
             where: {
                 [Op.and]: [
                     { user: owner },
-                    { type: "GOOGLE_ACCESS" },
+                    { type: "GOOGLE_REFRESH_TOKEN" },
                     { id: id }
                 ]
             }

@@ -188,7 +188,7 @@ class ContactService {
         let itemData = { contacts: [], count: 0 }
         const token = await getUpdatedToken(owner)
         if (token) {
-            const apiUrl = 'https://people.googleapis.com/v1/people/me/connections?personFields=names,phoneNumbers';
+            const apiUrl = 'https://people.googleapis.com/v1/people/me/connections?personFields=names,phoneNumbers&pageSize=1000&sortOrder=FIRST_NAME_ASCENDING';
             const headers = {
                 'Authorization': `Bearer ${token}`,
             };
@@ -197,31 +197,17 @@ class ContactService {
             const response = await axios.get(apiUrl, { headers });
             for (let contactKey in response.data.connections) {
                 const contact = response.data.connections[contactKey];
-
                 try {
 
                     itemData.contacts.push({
                         name: contact.names[0].displayName,
                         phoneNumber: contact.phoneNumbers[0].canonicalForm
                     });
-
-
-                    // if (contact.names && contact.names[0].displayName && contact.phoneNumbers && contact.phoneNumbers[0].canonicalForm) {
-                    //     itemData.contacts.push({
-                    //         name: contact.names[0].displayName,
-                    //         phoneNumber: contact.phoneNumbers[0].canonicalForm
-                    //     });
-                    // } else if ((!contact.names || !contact.names[0].displayName) && contact.phoneNumbers && contact.phoneNumbers[0].canonicalForm) {
-                    //     itemData.contacts.push({
-                    //         name: "",
-                    //         phoneNumber: contact.phoneNumbers[0].canonicalForm
-                    //     });
-                    // }
-                    // console.log(itemData)
                 } catch (error) {
-                    console.log("ERROR" + contact)
+                    
                 }
             }
+            console.log(response.data.connections.length)
             itemData.count = itemData.contacts.length
             return itemData
         }

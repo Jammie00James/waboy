@@ -55,7 +55,7 @@ const validateGoogle = async (req, res, next) => {
         where: {
             [Op.and]: [
                 { user: user.id },
-                { type: "EMAIL_VERIFICATION" }
+                { type: "GOOGLE_REFRESH_TOKEN" }
             ]
         }
     });
@@ -73,5 +73,26 @@ const validateGoogle = async (req, res, next) => {
     }
 }
 
+const checkConnection = async (req, res, next) => {
+    const user = req.user
 
-module.exports = { authenticateUser, validateGoogle }
+    const token = await Token.findOne({
+        attributes: ['otp'],
+        where: {
+            [Op.and]: [
+                { user: user.id },
+                { type: "GOOGLE_REFRESH_TOKEN" }
+            ]
+        }
+    });
+
+    if(token){
+        next()
+    }else{
+        return res.status(401).json({ error: 'Google account not connected' });
+    }
+}
+
+
+
+module.exports = { authenticateUser, validateGoogle , checkConnection}

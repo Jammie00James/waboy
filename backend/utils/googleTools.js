@@ -34,7 +34,7 @@ async function getUpdatedToken(userId) {
         }
       })
       .catch((error) => {
-        console.error('Error verifying token', error);
+        console.error('Error verifying token');
         return null
       });
   }
@@ -68,7 +68,7 @@ async function getUpdatedToken(userId) {
       })
       .then(async (response) => {
         newAccessToken = response.data.access_token;
-        console.log('New Access Token:', newAccessToken);
+        console.log('New Access Token Generated');
         await Token.destroy({
           where: {
             [Op.and]: [
@@ -80,7 +80,7 @@ async function getUpdatedToken(userId) {
         const token = await Token.create({ otp: newAccessToken, type: "GOOGLE_ACCESS_TOKEN", user: userId })
       })
       .catch((error) => {
-        console.error('Error refreshing access token:', error);
+        console.error('Error refreshing access token:');
         return null
       });
 

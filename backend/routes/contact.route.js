@@ -5,6 +5,7 @@ const router = express.Router();
 
 router.post('/createList', [authMiddleware.authenticateUser],contactController.createList)
 router.get('/lists',[authMiddleware.authenticateUser], contactController.lists)
+router.get('/listDetails/:id',[authMiddleware.authenticateUser], contactController.listDetails)
 // router.post('/addSinglePhone',[authMiddleware.authenticateUser] ,contactController.addSinglePhone)
 router.post('/addBatchPhone', [authMiddleware.authenticateUser] ,contactController.addBatchPhone)
 // router.post('/addSingleEmail',[authMiddleware.authenticateUser] ,contactController.addSingleEmail)

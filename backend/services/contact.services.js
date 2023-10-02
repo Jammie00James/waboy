@@ -73,10 +73,45 @@ class ContactService {
                 });
             }
 
-            const itemdetails = { id: item.id, title: item.title, type: item.type, contacts: people }
+            const itemdetails = { id: item.id, title: item.title, type: item.type, count:people.length}
             itemData.push(itemdetails)
         }
         return itemData
+    }
+
+    async listDetails(listId, owner) {
+        if (!listId) throw new CustomError('You must provide a list type', 400)
+
+        const item = await ContactList.findOne({
+            attributes: ['id', 'title', 'type'],
+            where: {
+                [Op.and]: [
+                    { id: listId },
+                    { owner: owner }
+                ]
+            }
+        });
+        if(!item) throw new CustomError('List not found', 400)
+
+        let people = []
+        if (item.type === "PHONE") {
+            people = await Person.findAll({
+                attributes: ['id', 'name', 'phoneNumber'],
+                where: {
+                    list: item.id
+                }
+            });
+        } else if (item.type === "EMAIL") {
+            people = await Person.findAll({
+                attributes: ['id', 'name', 'EMAIL'],
+                where: {
+                    list: item.id
+                }
+            });
+        }
+
+        const itemdetails = { id: item.id, title: item.title, type: item.type, count:people.length, contacts: people }
+        return itemdetails
     }
 
     async addSinglePhone(name, phoneNumber, listId, owner) {
@@ -204,7 +239,7 @@ class ContactService {
                         phoneNumber: contact.phoneNumbers[0].canonicalForm
                     });
                 } catch (error) {
-                    
+
                 }
             }
             console.log(response.data.connections.length)

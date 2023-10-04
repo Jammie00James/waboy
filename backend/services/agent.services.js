@@ -144,7 +144,7 @@ class AgentService {
 
   async all(owner) {
     const agents = await Agent.findAll({
-      attributes: ['id', 'clientid', 'state', 'config', 'updatedAt'],
+      attributes: ['id', 'clientid', 'state', 'config', 'updatedAt','createdAt'],
       where: {
         owner: owner
       }
@@ -233,10 +233,6 @@ class AgentService {
 }
 
 const service = new AgentService()
-
-
-
-console.log(24)
 
 async function connectMongo() {
   console.log(50)

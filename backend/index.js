@@ -1,5 +1,6 @@
 const express = require('express')
 const bodyParser = require('body-parser');
+const cors = require('cors');
 const dotenv = require('dotenv')
 dotenv.config()
 // const { connectMongo } = require('./config/monDb')
@@ -22,19 +23,26 @@ async function commence() {
     // await connectMongo();
 
     const app = express()
-    
+    const corsOptions = {
+      origin: 'localhost:3000', // Replace with your front-end's URL
+    };
+
+    app.use(cors(corsOptions));
+
+
+
     app.use(bodyParser.json());
     app.use(cookieParser());
     app.use('/api/auth', require('./routes/auth.route'));
-    app.use('/api/user', require('./routes/user.route'));
-    // app.use('/api/agent', require('./routes/agent.route'));
+    // app.use('/api/user', require('./routes/user.route'));
+    //app.use('/api/agent', require('./routes/agent.route'));
     app.use('/api/contact', require('./routes/contact.route'));
     // app.use('/api/public', require('./routes/public.route'));
-    
+
     app.all('*', (req, res) => {
       res.status(404).send('Page not Found')
     })
-    
+
     app.listen(3000, () => {
       console.log('App is running on port 3000')
     })

@@ -24,7 +24,7 @@ async function commence() {
 
     const app = express()
     const corsOptions = {
-      origin: 'localhost:3000', // Replace with your front-end's URL
+      origin: '*', // Replace with your front-end's URL
     };
 
     app.use(cors(corsOptions));

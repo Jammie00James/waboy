@@ -22,7 +22,7 @@ async function commence() {
     await startApp();
     // await connectMongo();
 
-    // const app = express()
+    const app = express()
     // const corsOptions = {
     //   origin: '*', // Replace with your front-end's URL
     // };

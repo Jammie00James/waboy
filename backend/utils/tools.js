@@ -5,5 +5,4 @@ function generateToken() {
     return ran.toString()
 }
 
-
-module.exports = {generateToken}
+module.exports = { generateToken }

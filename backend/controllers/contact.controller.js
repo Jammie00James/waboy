@@ -57,7 +57,6 @@ exports.listDetails = async (req, res) => {
 }
 
 
-
 exports.addSinglePhone = async (req, res) => {
     try {
         const user = req.user

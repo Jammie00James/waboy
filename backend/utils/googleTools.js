@@ -1,6 +1,6 @@
 const axios = require('axios');
 const config = require('../config/config.env')
-const { User, Token } = require('../config/db');
+const { Token } = require('../config/db');
 const { Op } = require("sequelize");
 const CustomError = require('./custom-errors');
 const tokenUrl = 'https://oauth2.googleapis.com/token';
@@ -80,8 +80,8 @@ async function getUpdatedToken(userId) {
         const token = await Token.create({ otp: newAccessToken, type: "GOOGLE_ACCESS_TOKEN", user: userId })
       })
       .catch((error) => {
-        console.error('Error refreshing access token:');
-        return null
+        console.error('Error refreshing access token:' + error);
+        return false
       });
 
     return newAccessToken

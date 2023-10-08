@@ -1,10 +1,14 @@
 const config = require('../config/config.env')
 const qrcode = require('qrcode-terminal');
+const axios = require('axios');
+const ContactService = require('../services/contact.services')
 const CustomError = require('../utils/custom-errors')
-const { Agent, User } = require('../config/db')
+const { Agent, ContactList } = require('../config/db')
 const { Client, RemoteAuth } = require('whatsapp-web.js');
-const {generateToken} = require('../utils/tools')
+const { generateToken } = require('../utils/tools')
 const { MongoStore } = require('wwebjs-mongo');
+const { MessageMedia } = require('whatsapp-web.js');
+const { getUpdatedToken } = require('../utils/googleTools')
 const { Op } = require("sequelize");
 const mongoose = require('mongoose');
 // const { connectMongo } = require('../config/monDb')
@@ -13,7 +17,8 @@ let runningInstances = []
 let activeInstances = []
 
 class AgentService {
-  async create(clientId, prompts, owner) {
+
+  async create(clientId, options, owner) {
     return new Promise(async (resolve, reject) => {
       const client = new Client({
         authStrategy: new RemoteAuth({
@@ -34,24 +39,178 @@ class AgentService {
       client.on('remote_session_saved', () => {
         console.log(clientId + "Remote session saved")
       })
-      
+
       client.on('disconnected', () => {
         console.log(clientId + ' disconnected')
       })
 
       client.on('ready', () => {
         console.log(clientId + ' is ready!');
-        this.createState(clientId, "RUNNING", prompts, owner)
+        this.createState(clientId, "RUNNING", options, owner)
       });
 
       client.on("message", message => {
         console.log(clientId + ' New Message : ' + message.body + " " + message.from);
-        prompts.forEach(element => {
-          if (message.body == element.prompt)
-            setTimeout(() => {
-              message.reply(element.reply);
-            }, 15000);
-        });
+
+        if (options.agent.active) {
+          options.agent.handler.forEach(handler => {
+            if (message.body == handler.prompt) {
+              //Handling auto responder
+              handler.replys.forEach(reply => {
+                setTimeout(async () => {
+                  switch (reply.type) {
+                    case "T":
+                      message.reply(reply.text);
+                      break;
+                    case "P":
+                      const Pmedia = await MessageMedia.fromUrl(reply.link);
+                      message.reply(Pmedia)
+                      .then((message) => {
+                        console.log('Image sent successfully:', message);
+                      })
+                      .catch((error) => {
+                        console.error('Error sending image:', error);
+                      });
+
+                      // axios.get(reply.link, { responseType: 'arraybuffer' })
+                      //   .then((response) => {
+                      //     // Create a MessageMedia object with the image data
+                      //     const media = new MessageMedia('image/jpeg', response.data);
+
+                      //     // Send the image as a media message
+                      //     message.reply(media)
+                      //       .then((message) => {
+                      //         console.log('Image sent successfully:', message);
+                      //       })
+                      //       .catch((error) => {
+                      //         console.error('Error sending image:', error);
+                      //       });
+                      //   })
+                      //   .catch((error) => {
+                      //     console.error('Error downloading image:', error);
+                      //   });
+                      break;
+                    case "V":
+                      const Vmedia = await MessageMedia.fromUrl(reply.link);
+                      message.reply(Vmedia)
+                      .then((message) => {
+                        console.log('Video sent successfully:', message);
+                      })
+                      .catch((error) => {
+                        console.error('Error sending video:', error);
+                      });
+
+                      // axios.get(reply.link, { responseType: 'arraybuffer' })
+                      //   .then((response) => {
+                      //     // Create a MessageMedia object with the image data
+                      //     const media = new MessageMedia('video/mp4', response.data);
+
+                      //     // Send the image as a media message
+                      //     message.reply(media)
+                      //       .then((message) => {
+                      //         console.log('Video sent successfully:', message);
+                      //       })
+                      //       .catch((error) => {
+                      //         console.error('Error sending video:', error);
+                      //       });
+                      //   })
+                      //   .catch((error) => {
+                      //     console.error('Error downloading video:', error);
+                      //   });
+                      break;
+                    case "CP":
+                      const CPmedia = await MessageMedia.fromUrl(reply.link);
+                      message.reply(CPmedia, {caption: reply.caption})
+                      .then((message) => {
+                        console.log('Image sent successfully:', message);
+                      })
+                      .catch((error) => {
+                        console.error('Error sending image:', error);
+                      });
+
+                      // axios.get(reply.link, { responseType: 'arraybuffer' })
+                      //   .then((response) => {
+                      //     // Create a MessageMedia object with the image data
+                      //     const media = new MessageMedia('image/jpeg', response.data);
+
+                      //     // Send the image as a media message
+                      //     message.reply(media)
+                      //       .then((message) => {
+                      //         console.log('Image sent successfully:', message);
+                      //       })
+                      //       .catch((error) => {
+                      //         console.error('Error sending image:', error);
+                      //       });
+                      //   })
+                      //   .catch((error) => {
+                      //     console.error('Error downloading image:', error);
+                      //   });
+                      break;
+                    case "CV":
+                      axios.get(reply.link, { responseType: 'arraybuffer' })
+                        .then((response) => {
+                          // Create a MessageMedia object with the image data
+                          const media = new MessageMedia('video/mp4', response.data);
+
+                          // Send the image as a media message
+                          message.reply(media)
+                            .then((message) => {
+                              console.log('Video sent successfully:', message);
+                            })
+                            .catch((error) => {
+                              console.error('Error sending video:', error);
+                            });
+                        })
+                        .catch((error) => {
+                          console.error('Error downloading video:', error);
+                        });
+                      break;
+                    case "A":
+                      axios.get(reply.link, { responseType: 'arraybuffer' })
+                        .then((response) => {
+                          // Create a MessageMedia object with the image data
+                          const media = new MessageMedia('audio/mp3', response.data);
+
+                          // Send the image as a media message
+                          message.reply(media)
+                            .then((message) => {
+                              console.log('Audio sent successfully:', message);
+                            })
+                            .catch((error) => {
+                              console.error('Error sending audio:', error);
+                            });
+                        })
+                        .catch((error) => {
+                          console.error('Error downloading audio:', error);
+                        });
+                      break;
+                    default:
+                      break;
+                  }
+                }, (handler.interval * 1000));
+
+              });
+              // Handling auto saving to list
+              if (handler.autoSaveToList.active) {
+
+                // get the name and phone number of the person and arraing it as {name, phoneNumber}
+                ContactService.saveToListsFromAgent(person, handler.autoSaveToList.lists)
+              }
+
+              // Handling auto saving to google contacts
+              if (handler.autoSaveToContacts.active) {
+
+                // get the name and phone number of the person and arraing it as {name, phoneNumber}
+                // add preffix and suffix
+                ContactService.saveToContactsFromAgent(person, handler.autoSaveToList.lists)
+              }
+
+            }
+          });
+
+
+
+        }
       })
 
       await client.initialize();
@@ -62,8 +221,7 @@ class AgentService {
 
   async generateclientId(clientId) {
 
-    const nanoidOTP = generateToken()
-    const extra = nanoidOTP()
+    const extra = generateToken()
 
     return clientId + '-' + extra
 
@@ -78,7 +236,7 @@ class AgentService {
       }
     });
     if (oldClient) {
-      await Agent.update({ state, config:JSON.stringify(config) }, {
+      await Agent.update({ state, config: JSON.stringify(config) }, {
         where: {
           id: oldClient.id
         }
@@ -87,7 +245,7 @@ class AgentService {
       return true
 
     } else {
-      let newClient = await Agent.create({ clientid, state, owner, config:JSON.stringify(config) })
+      let newClient = await Agent.create({ clientid, state, owner, config: JSON.stringify(config) })
       if (newClient) {
         runningInstances.push(newClient)
         return true
@@ -126,7 +284,7 @@ class AgentService {
     if (auth) {
       const targetClientIndex = activeInstances.findIndex((client) => client.authStrategy.clientId === clientId);
       console.log(targetClientIndex)
-  
+
       if (targetClientIndex !== -1) {
         // Send the message using the target client
         await activeInstances[targetClientIndex].logout()
@@ -136,7 +294,7 @@ class AgentService {
         console.log(`Client with ID ${clientId} not found.`);
         return true
       }
-  
+
     } else {
       throw new CustomError('Agent does not exist', 400)
     }
@@ -144,7 +302,7 @@ class AgentService {
 
   async all(owner) {
     const agents = await Agent.findAll({
-      attributes: ['id', 'clientid', 'state', 'config', 'updatedAt','createdAt'],
+      attributes: ['id', 'clientid', 'state', 'config', 'updatedAt', 'createdAt'],
       where: {
         owner: owner
       }
@@ -229,6 +387,38 @@ class AgentService {
     const { client, qrString } = await this.create(clientId, JSON.parse(oldClient.config), owner)
     return { client, qrString }
   }
+
+  async verifyOptions(options, owner) {
+    if (options.agent.active) {
+      await Promise.all(options.agent.handler.map(async handler => {
+        if (handler.autoSaveToContacts.active) {
+          await getUpdatedToken(owner)
+        }
+        if (handler.autoSaveToLists.active) {
+          await Promise.all( handler.autoSaveToLists.lists.map(async listid => {
+            const list = await ContactList.findOne({
+              attributes: ['id', 'type'],
+              where: {
+                [Op.and]: [
+                  { id: listid },
+                  { owner: owner }
+                ]
+              }
+            });
+            if (!list) throw new CustomError('list does not exist', 400)
+            if (list.type !== "PHONE") throw new CustomError('unsupported list type', 400)
+          })
+          )
+        }
+      })
+      )
+
+      return true
+    } else {
+      return true
+    }
+  }
+
 
 }
 

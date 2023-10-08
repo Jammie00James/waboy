@@ -23,15 +23,11 @@ async function commence() {
     // await connectMongo();
 
     const app = express()
-    // const corsOptions = {
-    //   origin: '*', // Replace with your front-end's URL
-    // };
-
-    // app.use(cors(corsOptions));
 
     app.use((req, res, next) => {
       res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000');
       // Add other CORS headers as needed
+      res.setHeader('Access-Control-Allow-Credentials', 'true');
       res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
       res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
       next();
@@ -41,7 +37,7 @@ async function commence() {
     app.use(cookieParser());
     app.use('/api/auth', require('./routes/auth.route'));
     // app.use('/api/user', require('./routes/user.route'));
-    //app.use('/api/agent', require('./routes/agent.route'));
+    // app.use('/api/agent', require('./routes/agent.route'));
     app.use('/api/contact', require('./routes/contact.route'));
     // app.use('/api/public', require('./routes/public.route'));
 

@@ -1,16 +1,22 @@
 const service = require('../services/agent.services')
 const AgentService = service
 const CustomError = require('../utils/custom-errors')
+const {isValidStruct} = require('../utils/agentTools')
 
 
 exports.create = async (req, res) => {
     try {
         const user = req.user
-        const prompt = req.body.prompts
-        let clientid = await AgentService.generateclientId(user.id)
-        let { client, qrString } = await AgentService.create(clientid, prompt, user.id)
-        if (client) {
-            res.status(200).json({ "message": "Successful", qrString })
+        const options = req.body
+        if (isValidStruct(options)) {
+            const verified = await AgentService.verifyOptions(options, user.id)
+            if (verified) {
+                let clientid = await AgentService.generateclientId(user.id)
+                let { client, qrString } = await AgentService.create(clientid, options, user.id)
+                if (client) {
+                    res.status(200).json({ "message": "Successful", qrString })
+                }
+            }
         }
     } catch (error) {
         if (error instanceof CustomError) {
@@ -79,7 +85,7 @@ exports.stop = async (req, res) => {
     try {
         const user = req.user
         const Id = req.body.Id
-        const stopped = await AgentService.stop(Id,user.id)
+        const stopped = await AgentService.stop(Id, user.id)
         if (stopped) {
             res.status(200).json({ "Message": "Agent stopped" })
         } else {
@@ -99,7 +105,7 @@ exports.start = async (req, res) => {
     try {
         const user = req.user
         const Id = req.body.Id
-        let { client, qrString } = await AgentService.start(Id,user.id)
+        let { client, qrString } = await AgentService.start(Id, user.id)
         if (client) {
             res.status(200).json({ "message": "Successful", qrString })
         }

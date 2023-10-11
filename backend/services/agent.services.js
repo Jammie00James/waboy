@@ -21,6 +21,9 @@ class AgentService {
   async create(clientId, options, owner) {
     return new Promise(async (resolve, reject) => {
       const client = new Client({
+        puppeteer: {
+          executablePath: '/usr/bin/google-chrome-stable',
+      },
         authStrategy: new RemoteAuth({
           clientId: clientId,
           store: store,
@@ -64,34 +67,20 @@ class AgentService {
                       break;
                     case "P":
                       const Pmedia = await MessageMedia.fromUrl(reply.link);
+                      Pmedia.mimetype = "image/jpg";
+                      Pmedia.filename = "CustomImageName.png";
                       message.reply(Pmedia)
-                      .then((message) => {
+                      .then((message) => { 
                         console.log('Image sent successfully:', message);
                       })
                       .catch((error) => {
                         console.error('Error sending image:', error);
                       });
-
-                      // axios.get(reply.link, { responseType: 'arraybuffer' })
-                      //   .then((response) => {
-                      //     // Create a MessageMedia object with the image data
-                      //     const media = new MessageMedia('image/jpeg', response.data);
-
-                      //     // Send the image as a media message
-                      //     message.reply(media)
-                      //       .then((message) => {
-                      //         console.log('Image sent successfully:', message);
-                      //       })
-                      //       .catch((error) => {
-                      //         console.error('Error sending image:', error);
-                      //       });
-                      //   })
-                      //   .catch((error) => {
-                      //     console.error('Error downloading image:', error);
-                      //   });
                       break;
                     case "V":
                       const Vmedia = await MessageMedia.fromUrl(reply.link);
+                      Vmedia.mimetype = "video/mp4";
+                      Vmedia.filename = "CustomImageName.mp4";
                       message.reply(Vmedia)
                       .then((message) => {
                         console.log('Video sent successfully:', message);
@@ -99,71 +88,6 @@ class AgentService {
                       .catch((error) => {
                         console.error('Error sending video:', error);
                       });
-
-                      // axios.get(reply.link, { responseType: 'arraybuffer' })
-                      //   .then((response) => {
-                      //     // Create a MessageMedia object with the image data
-                      //     const media = new MessageMedia('video/mp4', response.data);
-
-                      //     // Send the image as a media message
-                      //     message.reply(media)
-                      //       .then((message) => {
-                      //         console.log('Video sent successfully:', message);
-                      //       })
-                      //       .catch((error) => {
-                      //         console.error('Error sending video:', error);
-                      //       });
-                      //   })
-                      //   .catch((error) => {
-                      //     console.error('Error downloading video:', error);
-                      //   });
-                      break;
-                    case "CP":
-                      const CPmedia = await MessageMedia.fromUrl(reply.link);
-                      message.reply(CPmedia, {caption: reply.caption})
-                      .then((message) => {
-                        console.log('Image sent successfully:', message);
-                      })
-                      .catch((error) => {
-                        console.error('Error sending image:', error);
-                      });
-
-                      // axios.get(reply.link, { responseType: 'arraybuffer' })
-                      //   .then((response) => {
-                      //     // Create a MessageMedia object with the image data
-                      //     const media = new MessageMedia('image/jpeg', response.data);
-
-                      //     // Send the image as a media message
-                      //     message.reply(media)
-                      //       .then((message) => {
-                      //         console.log('Image sent successfully:', message);
-                      //       })
-                      //       .catch((error) => {
-                      //         console.error('Error sending image:', error);
-                      //       });
-                      //   })
-                      //   .catch((error) => {
-                      //     console.error('Error downloading image:', error);
-                      //   });
-                      break;
-                    case "CV":
-                      axios.get(reply.link, { responseType: 'arraybuffer' })
-                        .then((response) => {
-                          // Create a MessageMedia object with the image data
-                          const media = new MessageMedia('video/mp4', response.data);
-
-                          // Send the image as a media message
-                          message.reply(media)
-                            .then((message) => {
-                              console.log('Video sent successfully:', message);
-                            })
-                            .catch((error) => {
-                              console.error('Error sending video:', error);
-                            });
-                        })
-                        .catch((error) => {
-                          console.error('Error downloading video:', error);
-                        });
                       break;
                     case "A":
                       axios.get(reply.link, { responseType: 'arraybuffer' })

@@ -40,12 +40,9 @@ function isValidStruct(struct) {
             if (!struct.agent.handler[h].replys[0]) throw new CustomError("Replys container is empty", 400)
 
             for (let r in struct.agent.handler[h].replys) {
-
+                console.log("74")
                 if (struct.agent.handler[h].replys[r].type === "P" || struct.agent.handler[h].replys[r].type === "V" || struct.agent.handler[h].replys[r].type === "A") {
                     if (!struct.agent.handler[h].replys[r].link) throw new CustomError("Required content for reply type not found", 400)
-                } else if (struct.agent.handler[h].replys[r].type === "CP" || struct.agent.handler[0].replys[0].type === "CV") {
-                    if (!struct.agent.handler[h].replys[r].link) throw new CustomError("Required content for reply type not found", 400)
-                    if (!struct.agent.handler[h].replys[r].caption) throw new CustomError("Required content for reply type not found", 400)
                 } else if (struct.agent.handler[h].replys[r].type === "T") {
                     if (!struct.agent.handler[h].replys[r].text) throw new CustomError("Required content for reply type not found", 400)
                 } else {

@@ -7,96 +7,95 @@ const { OAuth2Client } = require('google-auth-library');
 
 
 const authenticateUser = async (req, res, next) => {
-    let tokenHeader
-    const authHeader = req.headers.authorization;
-    if (authHeader) {
-        // Split the header to extract the type and token/credentials
-        const [authType, authValue] = authHeader.split(' ');
+    try {
+        let tokenHeader
+        const authHeader = req.headers.authorization;
+        if (authHeader) {
+            // Split the header to extract the type and token/credentials
+            const [authType, authValue] = authHeader.split(' ');
 
-        if (authType === 'Bearer' && authValue) {
-            // Handle JWT authentication
-            tokenHeader = authValue;
+            if (authType === 'Bearer' && authValue) {
+                // Handle JWT authentication
+                tokenHeader = authValue;
+            }
         }
-    }
 
-
-
-
-
-
-
-    const tokenCookie = req.cookies.__access;
-    if (tokenCookie) {
-        // Verify the token
-        console.log('jah')
-        const verifyToken = util.promisify(jwt.verify);
-        const decoded = await verifyToken(tokenCookie, config.JWT_SECRET_KEY);
-        let id = decoded.id;
-        if (id) {
-            const user = await User.findOne({
-                attributes: ['id', 'email', 'isverified'],
-                where: {
-                    id: id
-                }
-            });
-            if (user) {
-                if (req.originalUrl == '/api/auth/email-verify/request' || req.originalUrl == '/api/auth/email-verify') {
-                    if (user.isverified === 'T') {
-                        return res.status(401).json({ error: 'User Email Already Verified' });
+        const tokenCookie = req.cookies.__access;
+        if (tokenCookie) {
+            // Verify the token
+            console.log('jah')
+            const verifyToken = util.promisify(jwt.verify);
+            const decoded = await verifyToken(tokenCookie, config.JWT_SECRET_KEY);
+            let id = decoded.id;
+            if (id) {
+                const user = await User.findOne({
+                    attributes: ['id', 'email', 'isverified'],
+                    where: {
+                        id: id
                     }
-                    req.user = user;
-                    next();
+                });
+                if (user) {
+                    if (req.originalUrl == '/api/auth/email-verify/request' || req.originalUrl == '/api/auth/email-verify') {
+                        if (user.isverified === 'T') {
+                            return res.status(401).json({ error: 'User Email Already Verified' });
+                        }
+                        req.user = user;
+                        next();
+                    } else {
+                        if (user.isverified === "F") {
+                            return res.status(401).json({ error: 'User Email Not Verified' });
+                        }
+                        req.user = user;
+                        next();
+                    }
+
                 } else {
-                    if (user.isverified === "F") {
-                        return res.status(401).json({ error: 'User Email Not Verified' });
-                    }
-                    req.user = user;
-                    next();
+                    return res.status(401).json({ error: 'Invalid Token' });
                 }
+            } else {
+                return res.status(401).json({ error: 'Invalid Token' });
+            }
+        } else if (tokenHeader) {
+            // Verify the token
 
+            console.log(tokenHeader)
+
+            const verifyToken = util.promisify(jwt.verify);
+            const decoded = await verifyToken(tokenHeader, config.JWT_SECRET_KEY);
+            let id = decoded.id;
+            if (id) {
+                const user = await User.findOne({
+                    attributes: ['id', 'email', 'isverified'],
+                    where: {
+                        id: id
+                    }
+                });
+                if (user) {
+                    if (req.originalUrl == '/api/auth/email-verify/request' || req.originalUrl == '/api/auth/email-verify') {
+                        if (user.isverified === 'T') {
+                            return res.status(401).json({ error: 'User Email Already Verified' });
+                        }
+                        req.user = user;
+                        next();
+                    } else {
+                        if (user.isverified === "F") {
+                            return res.status(401).json({ error: 'User Email Not Verified' });
+                        }
+                        req.user = user;
+                        next();
+                    }
+
+                } else {
+                    return res.status(401).json({ error: 'Invalid Token' });
+                }
             } else {
                 return res.status(401).json({ error: 'Invalid Token' });
             }
         } else {
-            return res.status(401).json({ error: 'Invalid Token' });
+            return res.status(401).json({ error: 'No token provided' });
         }
-    } else if (tokenHeader) {
-        // Verify the token
-        
-        console.log(tokenHeader)
-        const verifyToken = util.promisify(jwt.verify);
-        const decoded = await verifyToken(tokenHeader, config.JWT_SECRET_KEY);
-        let id = decoded.id;
-        if (id) {
-            const user = await User.findOne({
-                attributes: ['id', 'email', 'isverified'],
-                where: {
-                    id: id
-                }
-            });
-            if (user) {
-                if (req.originalUrl == '/api/auth/email-verify/request' || req.originalUrl == '/api/auth/email-verify') {
-                    if (user.isverified === 'T') {
-                        return res.status(401).json({ error: 'User Email Already Verified' });
-                    }
-                    req.user = user;
-                    next();
-                } else {
-                    if (user.isverified === "F") {
-                        return res.status(401).json({ error: 'User Email Not Verified' });
-                    }
-                    req.user = user;
-                    next();
-                }
-
-            } else {
-                return res.status(401).json({ error: 'Invalid Token' });
-            }
-        } else {
-            return res.status(401).json({ error: 'Invalid Token' });
-        }
-    } else {
-        return res.status(401).json({ error: 'No token provided' });
+    } catch (error) {
+        return res.status(401).json({ error: 'Invalid Token' });
     }
 }
 

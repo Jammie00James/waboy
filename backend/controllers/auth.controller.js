@@ -7,7 +7,8 @@ exports.login = async (req, res) => {
         const { email, password } = req.body
         let token = await AuthService.login(email, password)
         if (token) {
-            res.status(200).cookie('__access', token, { httpOnly: true, secure: true,  domain: 'localhost',   sameSite: 'None', overwrite: true, }).json({ "Message": "Login Successful" })
+            res.cookie('__access', token, { httpOnly: false, secure: true, host:'localhost', sameSite: 'none', maxAge: 3600 })
+            res.status(200).json({ "Message": "Login Successful", "data":token })
         }
     } catch (error) {
         if (error instanceof CustomError) {
@@ -21,12 +22,13 @@ exports.login = async (req, res) => {
 
 exports.signup = async (req, res) => {
     try {
-        const { username, email, firstname, lastname, password, referralcode} = req.body
+        const { username, email, firstname, lastname, password, referralcode } = req.body
         let token = await AuthService.signup(username, email, firstname, lastname, password, referralcode)
         if (token) {
-            res.status(200).cookie('__access', token, { httpOnly: true, secure: true,  domain: 'localhost',   sameSite: 'None', overwrite: true, }).json({ "Message": "Signup Successful" })
+            res.cookie('__access', token, { httpOnly: false, secure: true, host:'localhost', sameSite: 'none', maxAge: 3600 })
+            res.status(200).json({ "Message": "Signup Successful", "data":token })
         }
-    } catch (error) { 
+    } catch (error) {
         if (error instanceof CustomError) {
             res.status(error.status).json({ error: error.message });
         } else {
@@ -55,7 +57,7 @@ exports.emailVerifyRequest = async (req, res) => {
 
 exports.emailVerify = async (req, res) => {
     try {
-        const {otp} = req.body
+        const { otp } = req.body
         let state = await AuthService.verifyEmail(req.user.id, otp)
         if (state) {
             res.status(200).json({ success: true, message: 'User Email Verified' });
@@ -99,7 +101,7 @@ exports.generateAuthCodeCallback = async (req, res) => {
     try {
         const { code, error } = req.query;
         const user = req.user
-        if(!error){
+        if (!error) {
             let success = await AuthService.generateAuthCodeCallback(code, user)
         }
         res.redirect('http://localhost:3000/k')
@@ -116,7 +118,7 @@ exports.generateAuthCodeCallback = async (req, res) => {
 exports.removeOAuth2Client = async (req, res) => {
     try {
         const user = req.user
-        const {id} = req.body
+        const { id } = req.body
         let state = await AuthService.removeOAuth2Client(id, req.user.id)
         if (state) {
             res.status(200).json({ success: true, message: 'Google account removed successfully' });

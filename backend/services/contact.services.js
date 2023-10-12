@@ -73,7 +73,7 @@ class ContactService {
                 });
             }
 
-            const itemdetails = { id: item.id, title: item.title, type: item.type, count:people.length}
+            const itemdetails = { id: item.id, title: item.title, type: item.type, count: people.length }
             itemData.push(itemdetails)
         }
         return itemData
@@ -91,7 +91,7 @@ class ContactService {
                 ]
             }
         });
-        if(!item) throw new CustomError('List not found', 400)
+        if (!item) throw new CustomError('List not found', 400)
 
         let people = []
         if (item.type === "PHONE") {
@@ -110,32 +110,28 @@ class ContactService {
             });
         }
 
-        const itemdetails = { id: item.id, title: item.title, type: item.type, count:people.length, contacts: people }
+        const itemdetails = { id: item.id, title: item.title, type: item.type, count: people.length, contacts: people }
         return itemdetails
     }
 
-    async addSinglePhone(name, phoneNumber, listId, owner) {
-        if (!name) throw new CustomError('You must provide a name', 400)
-        if (!phoneNumber) throw new CustomError('You must provide a phoneNumber', 400)
-        if (!isValidPhoneNumber(phoneNumber)) throw new CustomError('Please provide a valid phone number', 400)
+    async addSinglePhone(name, phoneNumber, listId) {
+        if (!name) return null
+        if (!phoneNumber) return null
+        if (!isValidPhoneNumber(phoneNumber)) return null
         phoneNumber = phoneNumber.replace(/\s/g, '')
-        if (!listId) throw new CustomError('You must select a list', 400)
+        if (!listId) return null
 
         let list = await ContactList.findOne({
             attributes: ['id', 'type'],
             where: {
-                [Op.and]: [
-                    { id: listId },
-                    { owner: owner }
-                ]
+                id: listId
             }
         });
-        if (!list) throw new CustomError('list does not exist', 400)
-        if (list.type !== "PHONE") throw new CustomError('invalid list type', 400)
+        if (!list) return null
+        if (list.type !== "PHONE") return null
         await Person.create({ name, phoneNumber, list: listId })
 
-        let newvalue = this.lists(owner)
-        return newvalue
+        return true
     }
 
     async addBatchPhone(batch, listId, owner) {
@@ -249,6 +245,29 @@ class ContactService {
 
     }
 
+    async saveToListsFromAgent(person, lists) {
+        // loop thro d array of list
+        lists.forEach(async list => {
+            let existingList = await Person.findOne({
+                attributes: ['id'],
+                where: {
+                    [Op.and]: [
+                        { phoneNumber: person.phoneNumber },
+                        { list: list }
+                    ]
+                }
+            });
+
+            if (!existingList) {
+                this.addSinglePhone(person.name,person.phoneNumber,list)
+            }
+            
+        });
+        // in each, check if user is alresdy
+        // if yes, do nothing
+        // if no, add to list
+        // move on
+    }
 
 
 }

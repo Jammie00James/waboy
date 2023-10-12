@@ -23,7 +23,7 @@ class AgentService {
       const client = new Client({
         puppeteer: {
           executablePath: '/usr/bin/google-chrome-stable',
-      },
+        },
         authStrategy: new RemoteAuth({
           clientId: clientId,
           store: store,
@@ -56,8 +56,17 @@ class AgentService {
         console.log(clientId + ' New Message : ' + message.body + " " + message.from);
 
         if (options.agent.active) {
-          options.agent.handler.forEach(handler => {
+          options.agent.handler.forEach(async handler => {
             if (message.body == handler.prompt) {
+              // Handling auto saving to list
+              if (handler.autoSaveToLists.active) {
+                // get the name and phone number of the person and arraing it as {name, phoneNumber}
+                const lPerson = {name:(await message.getContact()).pushname, phoneNumber:'+'+(await message.getContact()).number}
+                console.log(message.body)
+                console.log(lPerson)
+                ContactService.saveToListsFromAgent(lPerson, handler.autoSaveToLists.lists)
+              }
+
               //Handling auto responder
               handler.replys.forEach(reply => {
                 setTimeout(async () => {
@@ -67,45 +76,38 @@ class AgentService {
                       break;
                     case "P":
                       const Pmedia = await MessageMedia.fromUrl(reply.link);
-                      Pmedia.mimetype = "image/jpg";
-                      Pmedia.filename = "CustomImageName.png";
+                      // Pmedia.mimetype = "image/jpg";
+                      // Pmedia.filename = "CustomImageName.png";
                       message.reply(Pmedia)
-                      .then((message) => { 
-                        console.log('Image sent successfully:', message);
-                      })
-                      .catch((error) => {
-                        console.error('Error sending image:', error);
-                      });
+                        .then((message) => {
+                          console.log('Image sent successfully:');
+                        })
+                        .catch((error) => {
+                          console.error('Error sending image:');
+                        });
                       break;
                     case "V":
                       const Vmedia = await MessageMedia.fromUrl(reply.link);
-                      Vmedia.mimetype = "video/mp4";
-                      Vmedia.filename = "CustomImageName.mp4";
+                      // Vmedia.mimetype = "video/mp4";
+                      // Vmedia.filename = "CustomImageName.mp4";
                       message.reply(Vmedia)
-                      .then((message) => {
-                        console.log('Video sent successfully:', message);
-                      })
-                      .catch((error) => {
-                        console.error('Error sending video:', error);
-                      });
-                      break;
-                    case "A":
-                      axios.get(reply.link, { responseType: 'arraybuffer' })
-                        .then((response) => {
-                          // Create a MessageMedia object with the image data
-                          const media = new MessageMedia('audio/mp3', response.data);
-
-                          // Send the image as a media message
-                          message.reply(media)
-                            .then((message) => {
-                              console.log('Audio sent successfully:', message);
-                            })
-                            .catch((error) => {
-                              console.error('Error sending audio:', error);
-                            });
+                        .then((message) => {
+                          console.log('Video sent successfully:');
                         })
                         .catch((error) => {
-                          console.error('Error downloading audio:', error);
+                          console.error('Error sending video:');
+                        });
+                      break;
+                    case "A":
+                      const Amedia = await MessageMedia.fromUrl(reply.link);
+                      // Amedia.mimetype = "audio/mp3";
+                      // Amedia.filename = "CustomImageName.mp3";
+                      message.reply(Amedia)
+                        .then((message) => {
+                          console.log('Image sent successfully:');
+                        })
+                        .catch((error) => {
+                          console.error('Error sending image:');
                         });
                       break;
                     default:
@@ -114,19 +116,14 @@ class AgentService {
                 }, (handler.interval * 1000));
 
               });
-              // Handling auto saving to list
-              if (handler.autoSaveToList.active) {
-
-                // get the name and phone number of the person and arraing it as {name, phoneNumber}
-                ContactService.saveToListsFromAgent(person, handler.autoSaveToList.lists)
-              }
 
               // Handling auto saving to google contacts
               if (handler.autoSaveToContacts.active) {
-
+                let cPerson = {name:(await message.getContact()).pushname, phoneNumber:'+'+(await message.getContact()).number}
                 // get the name and phone number of the person and arraing it as {name, phoneNumber}
+                
                 // add preffix and suffix
-                ContactService.saveToContactsFromAgent(person, handler.autoSaveToList.lists)
+                // ContactService.saveToContactsFromAgent(person, handler.autoSaveToList.lists)
               }
 
             }
@@ -319,7 +316,7 @@ class AgentService {
           await getUpdatedToken(owner)
         }
         if (handler.autoSaveToLists.active) {
-          await Promise.all( handler.autoSaveToLists.lists.map(async listid => {
+          await Promise.all(handler.autoSaveToLists.lists.map(async listid => {
             const list = await ContactList.findOne({
               attributes: ['id', 'type'],
               where: {

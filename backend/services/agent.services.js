@@ -12,6 +12,7 @@ const { getUpdatedToken } = require('../utils/googleTools')
 const { Op } = require("sequelize");
 const mongoose = require('mongoose');
 // const { connectMongo } = require('../config/monDb')
+//                 liboff12 roger12
 let store
 let runningInstances = []
 let activeInstances = []
@@ -61,7 +62,7 @@ class AgentService {
               // Handling auto saving to list
               if (handler.autoSaveToLists.active) {
                 // get the name and phone number of the person and arraing it as {name, phoneNumber}
-                const lPerson = {name:(await message.getContact()).pushname, phoneNumber:'+'+(await message.getContact()).number}
+                const lPerson = { name: (await message.getContact()).pushname, phoneNumber: '+' + (await message.getContact()).number }
                 console.log(message.body)
                 console.log(lPerson)
                 ContactService.saveToListsFromAgent(lPerson, handler.autoSaveToLists.lists)
@@ -119,11 +120,17 @@ class AgentService {
 
               // Handling auto saving to google contacts
               if (handler.autoSaveToContacts.active) {
-                let cPerson = {name:(await message.getContact()).pushname, phoneNumber:'+'+(await message.getContact()).number}
+
                 // get the name and phone number of the person and arraing it as {name, phoneNumber}
-                
-                // add preffix and suffix
-                // ContactService.saveToContactsFromAgent(person, handler.autoSaveToList.lists)
+                if (!(await message.getContact()).isMyContact) {
+                  let gName = (await message.getContact()).pushname
+                  if (handler.autoSaveToContacts.prefix) gName = handler.autoSaveToContacts.prefix + " " + gName
+                  if (handler.autoSaveToContacts.suffix) gName = gName + " " + handler.autoSaveToContacts.suffix
+                  let cPerson = { name: gName, phoneNumber: '+' + (await message.getContact()).number }
+
+                  ContactService.saveToContactsFromAgent(cPerson,owner)
+                }
+
               }
 
             }

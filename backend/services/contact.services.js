@@ -259,9 +259,9 @@ class ContactService {
             });
 
             if (!existingList) {
-                this.addSinglePhone(person.name,person.phoneNumber,list)
+                this.addSinglePhone(person.name, person.phoneNumber, list)
             }
-            
+
         });
         // in each, check if user is alresdy
         // if yes, do nothing
@@ -269,6 +269,37 @@ class ContactService {
         // move on
     }
 
+    async saveToContactsFromAgent(person, owner) {
+        try {
+            const token = await getUpdatedToken(owner)
+            let newContact = {
+                "names": [
+                    {
+                        "givenName": person.name
+                    }
+                ],
+                "phoneNumbers": [
+                    {
+                        "value": person.number
+                    }
+                ]
+            }
+            const headers = {
+                'Authorization': `Bearer ${token}`,
+                "Content-Type": "application/json"
+            }
+
+            axios.post('https://people.googleapis.com/v1/people:createContact', newContact, {
+                headers: headers
+            }).then(response => {
+                console.log('Contact added successfully!');
+            }).catch(error => {
+                console.error('Failed to add a new contact:');
+            });
+        } catch (error) {
+            console.log("error")
+        }
+    }
 
 }
 

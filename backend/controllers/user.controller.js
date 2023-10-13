@@ -44,7 +44,7 @@ exports.googleStatus = async (req, res) => {
         if (!connected) {
             res.status(200).json({ connected : false})
         }else{
-            res.status(200).json({ connected : true, email: connected.email})
+            res.status(200).json({ connected : true, email: connected})
         }
     } catch (error) {
         if (error instanceof CustomError) {

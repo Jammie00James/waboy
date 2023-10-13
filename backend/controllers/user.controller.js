@@ -35,3 +35,23 @@ exports.update = async (req, res) => {
         }
     }
 }
+
+
+exports.googleStatus = async (req, res) => {
+    try {
+        const user = req.user
+        let connected = await UserService.googleStatus(user.id)
+        if (!connected) {
+            res.status(200).json({ connected : false})
+        }else{
+            res.status(200).json({ connected : true, email: connected.email})
+        }
+    } catch (error) {
+        if (error instanceof CustomError) {
+            res.status(error.status).json({ error: error.message });
+        } else {
+            console.error(error);
+            res.status(500).json({ error: 'An error occured' });
+        }
+    }
+}

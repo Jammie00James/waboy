@@ -5,6 +5,7 @@ const router = express.Router();
 
 router.get('/me',[authMiddleware.authenticateUser],userController.me)
 router.post('/update',[authMiddleware.authenticateUser],userController.update)
+router.get('/googlestatus', [authMiddleware.authenticateUser], userController.googleStatus)
 
 
 

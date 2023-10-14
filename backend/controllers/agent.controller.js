@@ -84,8 +84,8 @@ exports.update = async (req, res) => {
 exports.stop = async (req, res) => {
     try {
         const user = req.user
-        const Id = req.body.Id
-        const stopped = await AgentService.stop(Id, user.id)
+        const id = req.body.id
+        const stopped = await AgentService.stop(id, user.id)
         if (stopped) {
             res.status(200).json({ "Message": "Agent stopped" })
         } else {
@@ -104,8 +104,8 @@ exports.stop = async (req, res) => {
 exports.start = async (req, res) => {
     try {
         const user = req.user
-        const Id = req.body.Id
-        let { client, qrString } = await AgentService.start(Id, user.id)
+        const id = req.body.id
+        let { client, qrString } = await AgentService.start(id, user.id)
         if (client) {
             res.status(200).json({ "message": "Successful", qrString })
         }

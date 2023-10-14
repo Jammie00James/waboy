@@ -39,6 +39,13 @@ class AgentService {
         resolve({ client, qrString });
       });
 
+      client.on('disconnected', qr => {
+        console.log("disconnected event fired")
+      });
+
+      client.on('destroyed', qr => {
+        console.log("destruction event fired")
+      });
 
       client.on('remote_session_saved', () => {
         console.log(clientId + "Remote session saved")
@@ -128,7 +135,7 @@ class AgentService {
                   if (handler.autoSaveToContacts.suffix) gName = gName + " " + handler.autoSaveToContacts.suffix
                   let cPerson = { name: gName, phoneNumber: '+' + (await message.getContact()).number }
 
-                  ContactService.saveToContactsFromAgent(cPerson,owner)
+                  ContactService.saveToContactsFromAgent(cPerson, owner)
                 }
 
               }
@@ -230,7 +237,7 @@ class AgentService {
 
   async all(owner) {
     const agents = await Agent.findAll({
-      attributes: ['id', 'clientid', 'state', 'config', 'updatedAt', 'createdAt'],
+      attributes: ['id', 'state', 'config', 'updatedAt', 'createdAt'],
       where: {
         owner: owner
       }
@@ -263,48 +270,48 @@ class AgentService {
     }
   }
 
-  async stop(clientId, owner) {
-    const client = await Agent.findOne({
+  async stop(id, owner) {
+    const Sclient = await Agent.findOne({
       attributes: ['id', 'clientid', 'state', 'config', 'owner'],
       where: {
         [Op.and]: [
-          { clientid: clientId },
+          { id: id },
           { owner: owner }
         ]
       }
     });
-    if (!client) throw new CustomError('Agent does not exist', 400)
-    if (client.state === "STOPPED") throw new CustomError('Agent is not running', 400)
+    if (!Sclient) throw new CustomError('Agent does not exist', 400)
+    if (Sclient.state === "STOPPED") throw new CustomError('Agent is not running', 400)
 
 
-    const targetClientIndex = activeInstances.findIndex((client) => client.authStrategy.clientId === clientId);
-    console.log(targetClientIndex)
+    const targetClientIndex = activeInstances.findIndex((client) => client.authStrategy.clientId === Sclient.clientid);
+    // console.log(targetClientIndex)
 
     if (targetClientIndex !== -1) {
       // Send the message using the target client
       await activeInstances[targetClientIndex].destroy()
       await activeInstances.splice(targetClientIndex, 1)[0];
-      const stopped = await this.createState(clientId, "STOPPED", JSON.parse(client.config), owner)
+      const stopped = await this.createState(Sclient.clientid, "STOPPED", JSON.parse(Sclient.config), owner)
       if (stopped) {
         return true
       } else {
         return false
       }
     } else {
-      console.log(`Client with ID ${clientId} not found.`);
-      throw new CustomError('Client with ID ${clientId} not found.', 400)
+      console.log(`Client with ID ${Sclient.clientid} not found.`)
+      throw new CustomError(`Client with ID ${Sclient.clientid} not found.`, 400)
     }
 
 
 
   }
 
-  async start(clientId, owner) {
+  async start(id, owner) {
     const oldClient = await Agent.findOne({
       attributes: ['id', 'clientid', 'state', 'config', 'owner'],
       where: {
         [Op.and]: [
-          { clientid: clientId },
+          { id: id },
           { owner: owner }
         ]
       }
@@ -312,7 +319,7 @@ class AgentService {
     if (!oldClient) throw new CustomError('Agent does not exist', 400)
     if (oldClient.state === "RUNNING") throw new CustomError('Agent is already running', 400)
 
-    const { client, qrString } = await this.create(clientId, JSON.parse(oldClient.config), owner)
+    const { client, qrString } = await this.create(oldClient.clientid, JSON.parse(oldClient.config), owner)
     return { client, qrString }
   }
 

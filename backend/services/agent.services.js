@@ -11,6 +11,7 @@ const { MessageMedia } = require('whatsapp-web.js');
 const { getUpdatedToken } = require('../utils/googleTools')
 const { Op } = require("sequelize");
 const mongoose = require('mongoose');
+// const { Json } = require('sequelize/types/utils');
 // const { connectMongo } = require('../config/monDb')
 //                 liboff12 roger12
 let store
@@ -237,24 +238,38 @@ class AgentService {
 
   async all(owner) {
     const agents = await Agent.findAll({
-      attributes: ['id', 'state', 'config', 'updatedAt', 'createdAt'],
+      attributes: ['id', 'clientid', 'state' , 'updatedAt',],
       where: {
         owner: owner
       }
     });
-    agents.forEach(element => {
-      element.config = JSON.parse(element.config)
-    });
     return agents;
+  }
+
+
+
+  async details(id, owner) {
+    const agent = await Agent.findOne({
+      attributes: ['id', 'clientid', 'state', 'config', 'updatedAt', 'createdAt'],
+      where: {
+        [Op.and]: [
+          { id: id },
+          { owner: owner }
+        ]
+      }
+    });
+    if(!agent) throw new CustomError("List not found",404)
+    agent.config = JSON.parse(agent.config)
+    return agent;
 
   }
 
-  async update(clientId, prompts, owner) {
+  async update(id, prompts, owner) {
     const client = await Agent.findOne({
       attributes: ['id', 'clientid', 'state', 'owner'],
       where: {
         [Op.and]: [
-          { clientid: clientId },
+          { id: id },
           { owner: owner }
         ]
       }
@@ -262,7 +277,7 @@ class AgentService {
 
     if (!client) throw new CustomError('Agent does not exist', 400)
     if (client.state === "RUNNING") throw new CustomError('Cannot modify running agent, please stop agent and try again', 400)
-    const saved = await this.createState(clientId, "STOPPED", prompts, owner)
+    const saved = await this.createState(client.clientid, "STOPPED", prompts, owner)
     if (saved) {
       return true
     } else {
@@ -271,6 +286,8 @@ class AgentService {
   }
 
   async stop(id, owner) {
+    if (!id) throw new CustomError('No agent specified', 400)
+
     const Sclient = await Agent.findOne({
       attributes: ['id', 'clientid', 'state', 'config', 'owner'],
       where: {

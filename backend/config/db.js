@@ -7,6 +7,7 @@ const AgentModel = require('../models/Agent')
 const ReferralModel = require('../models/Referral')
 const PersonModel = require('../models/Person')
 const ContactListModel = require('../models/ContactList')
+const BroadcastModel = require('../models/Broadcast')
 const relate = require('../models/createRelationships.js')
 
 
@@ -29,8 +30,9 @@ const Referral = ReferralModel(sequelize);
 const Agent = AgentModel(sequelize);
 const Person = PersonModel(sequelize)
 const ContactList = ContactListModel(sequelize)
+const Broadcast = BroadcastModel(sequelize)
 
-relate(User, PhoneNumber, Token, Agent, ContactList, Person)
+relate(User, PhoneNumber, Token, Agent, ContactList, Person, Broadcast)
 
 
 async function syncDatabase() {
@@ -52,5 +54,6 @@ module.exports = {
     Agent,
     ContactList, 
     Person,
+    Broadcast,
     syncDatabase,
 };

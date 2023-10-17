@@ -58,5 +58,18 @@ function isValidStruct(struct) {
     return true
 }
 
+function isValidBroadcastStruct(struct) {
+    if(!struct) throw new CustomError('No message found', 400)
+    if (!struct.type) throw new CustomError("No message type found", 400)
 
-module.exports = { isValidStruct }
+    if (struct.type === "P" || struct.type === "V" || struct.type === "A") {
+        if (!struct.link) throw new CustomError("Required content for reply type not found", 400)
+    } else if (struct.type === "T") {
+        if (!struct.text) throw new CustomError("Required content for reply type not found", 400)
+    } else {
+        throw new CustomError("Invalid reply type", 400)
+    }
+    return true
+}
+
+module.exports = { isValidStruct, isValidBroadcastStruct }

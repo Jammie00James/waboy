@@ -5,4 +5,9 @@ function generateToken() {
     return ran.toString()
 }
 
-module.exports = { generateToken }
+function isDateTime(str) {
+    const dateTime = new Date(str);
+    return !isNaN(dateTime.getTime());
+}
+
+module.exports = { generateToken, isDateTime }

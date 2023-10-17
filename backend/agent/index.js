@@ -393,3 +393,12 @@
 //   isMyContact: true,
 //   isBlocked: false
 // }
+
+
+
+
+// {
+//     type: "CP",
+//     text: "dhjhd jdh",
+//     link: "https://myphotolink.file",
+// }

@@ -39,7 +39,7 @@ async function commence() {
     app.use('/api/user', require('./routes/user.route'));
     app.use('/api/agent', require('./routes/agent.route'));
     app.use('/api/contact', require('./routes/contact.route'));
-    // app.use('/api/public', require('./routes/public.route'));
+    app.use('/api/broadcast', require('./routes/broadcast.route'));
 
     app.all('*', (req, res) => {
       res.status(404).send('Page not Found')

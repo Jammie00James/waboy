@@ -80,7 +80,7 @@ class ContactService {
     }
 
     async listDetails(listId, owner) {
-        if (!listId) throw new CustomError('You must provide a list type', 400)
+        if (!listId) throw new CustomError('You must provide a list id', 400)
 
         const item = await ContactList.findOne({
             attributes: ['id', 'title', 'type'],

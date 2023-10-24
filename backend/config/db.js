@@ -37,7 +37,7 @@ relate(User, PhoneNumber, Token, Agent, ContactList, Person, Broadcast)
 
 async function syncDatabase() {
     try {
-        await sequelize.sync({ force: false }); // Use { force: true } to drop and recreate the tables on each sync (for development)
+        await sequelize.sync({ force: true }); // Use { force: true } to drop and recreate the tables on each sync (for development)
         console.log('Database sync complete.');
     } catch (error) {
         console.error('Error syncing the database:', error);
